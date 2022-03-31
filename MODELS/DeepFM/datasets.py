@@ -9,23 +9,10 @@ from tqdm import tqdm
 class RatingDataset(Dataset):
     def __init__(self, args, rating_df, attr_df):
         self.args = args
-        self.rating_df = neg_sample(rating_df, args.negative_num) # args.negative num
+        self.rating_df = neg_sample(rating_df, self.args.negative_num) # args.negative num
         self.attr_df = attr_df
-        
-        # START : 임시로 joined_rating_df.csv 읽기
-        #path = r'data/train/joined_rating_df.csv'
-        #path = Path(path)
-        
-        #if(not path.exists()):
-        #    self.rating_df = neg_sample(rating_df, 50) # args.negative num
-        #    self.data = join_attribute(self.rating_df, self.attr_df, 'genre') # args.attr
-        #else:
-        #    print("load saved Join attribute df")
-        #    self.data = pd.read_csv(path)
-        # END
-
-        self.data = join_attribute(self.rating_df, self.attr_df, 'genre') # args.attr
-        self.X, self.y = feature_matrix(self.data, 'genre') # args.attr
+        self.data = join_attribute(self.rating_df, self.attr_df, self.args.attr) # args.attr
+        self.X, self.y = feature_matrix(self.data, self.args.attr) # args.attr
 
     def __getitem__(self, index):
         return self.X[index], self.y[index]
@@ -37,7 +24,7 @@ class RatingDataset(Dataset):
         return len(set(self.data.loc[:, 'item']))
 
     def get_attributes(self):
-        return len(set(self.data.loc[:, 'genre'])) # args.attr
+        return len(set(self.data.loc[:, self.args.attr])) # args.attr
 
     def __len__(self):
         return len(self.data)
