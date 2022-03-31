@@ -23,6 +23,7 @@ from torch.utils.data import DataLoader, Dataset
 import mlflow
 
 from datasets import *
+from models import *
 from loss import create_criterion
 
 #seed fix
@@ -90,7 +91,7 @@ def train(args):
     train_dataset, valid_dataset = torch.utils.data.random_split(dataset,[train_size,valid_size])
     
     train_loader = DataLoader(train_dataset,
-        batch_size = args.batch_size, #default batch_size = 1024
+        batch_size = args.batchsize, #default batch_size = 1024
         shuffle = True,
         num_workers = multiprocessing.cpu_count()//2,
         pin_memory=use_cuda,
@@ -99,7 +100,7 @@ def train(args):
         )
     
     valid_loader = DataLoader(valid_dataset, 
-        batch_size = args.batch_size, #default batch_size = 1024
+        batch_size = args.batchsize, #default batch_size = 1024
         shuffle = True,
         num_workers = multiprocessing.cpu_count()//2,
         pin_memory=use_cuda,
@@ -116,13 +117,12 @@ def train(args):
     input_dims = [n_users,n_items,n_attributes]
     emb_dim = args.embedding_dim # default 10
 
-    model_module = getattr(import_module("model"), args.model)
+    model_module = getattr(import_module("models"), args.model)
     model = model_module( #TODO : DeepFM Setting -> Generalized Setting
         args = args,
         input_dims = input_dims, 
         embedding_dim = emb_dim,
         mlp_dims = [30,20,10],
-        drop_rate = args.drop_rate # drop rate : 0.1
     ).to(device)
 
     # --loss
@@ -166,7 +166,7 @@ def train(args):
             loss = criterion(output, y.float())
 
             loss.backward()
-            optimizer.stop()
+            optimizer.step()
 
             loss_value += loss.item()
             matches += (result == y).sum().float()
@@ -248,9 +248,9 @@ if __name__ == '__main__':
     parser.add_argument('--lr_decay_step', type=int, default=20, help='lr decay step (default: 50)')
     parser.add_argument('--early_stopping', type=int, default=10, help='early stopping type (default: StepLR)')
     parser.add_argument('--lr', type=float, default=1e-2, help='learning rate (default: 1e-2)')
-    parser.add_argument('--drop_rate', type=float, default=0.1, help='ratio for drop out (default: 0.1)')
+    parser.add_argument('--drop_ratio', type=float, default=0.1, help='ratio for drop out (default: 0.1)')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
-    parser.add_argument('--criterion', type=str, default='cross_entropy', help='criterion type (default: cross_entropy)')
+    parser.add_argument('--criterion', type=str, default='bce_loss', help='criterion type (default: cross_entropy)')
     parser.add_argument('--embedding_dim', type=int, default=10, help='embedding dimention(default: 10)')
     parser.add_argument('--name', default='experiment1', help='model save at ./exp/{name}')
     
