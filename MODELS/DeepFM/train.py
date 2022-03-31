@@ -132,6 +132,8 @@ def train(args):
         mlp_dims = [30,20,10],
     ).to(device)
 
+    model = torch.nn.DataParallel(model)
+
     # --loss
     criterion = create_criterion(args.criterion)  # default: cross_entropy
     
@@ -221,13 +223,13 @@ def train(args):
             
             if val_acc > best_val_acc:
                 print(f"New best model for val accuracy : {val_acc:4.2%}! saving the best model..")
-                torch.save(model.state_dict(), f"{save_dir}/best.pth")
+                torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
                 best_val_acc = val_acc
                 stop_counter = 0
             else:
                 stop_counter += 1
                 print(f"!!! Early stop counter = {stop_counter}/{patience}")
-            torch.save(model.state.dict(), f"{save_dir}/last.pth")
+            torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
             print(
                 f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || "
                 f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2}"
@@ -259,7 +261,7 @@ if __name__ == '__main__':
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='bce_loss', help='criterion type (default: cross_entropy)')
     parser.add_argument('--embedding_dim', type=int, default=10, help='embedding dimention(default: 10)')
-    parser.add_argument('--name', type=str, default='experiment1', help='model save at ./exp/{name}')
+    parser.add_argument('--name', type=str, default='experiment', help='model save at ./exp/{name}')
     parser.add_argument('--nagative_num',type=int, default=50, help='negative sample numbers')
     parser.add_argument('--attr', type=str ,default="genre", help='attributes type ')
     
