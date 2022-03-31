@@ -185,13 +185,13 @@ def train(args):
             # TODO : log interver
             if(idx + 1) % 100 == 0:
                 train_loss = loss_value / 100
-                train_acc = (matches / args.batch_size) / 100
+                train_acc = matches / args.batch_size
                 current_lr = get_lr(optimizer)
                 pbar.set_postfix(
                     {
                         "Epoch" : f"[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)})",
                         "loss" : f"{train_loss:4.4}",
-                        "accuracy" : f"{train_acc:4.2}",
+                        "accuracy" : f"{train_acc:4.2%}",
                         "lr" : f"{current_lr}"
                     }
                 )
@@ -217,8 +217,8 @@ def train(args):
                 val_loss += loss.item()
                 val_matches += (result == y).sum().float()
 
-            val_acc = val_matches/valid_size
-            val_loss = val_loss/valid_size
+            val_acc = val_matches/len(valid_dataset)
+            val_loss = val_loss/len(valid_dataset)
             best_val_loss = min(best_val_loss, val_loss)
             
             if val_acc > best_val_acc:
@@ -228,7 +228,7 @@ def train(args):
                 stop_counter = 0
             else:
                 stop_counter += 1
-                print(f"!!! Early stop counter = {stop_counter}/{patience}")
+                print(f"!!! Early stop counter = {stop_counter}/{patience} !!!")
             torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
             print(
                 f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || "
@@ -254,18 +254,18 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='DeepFM', help='model type (default: DeepFM)')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
     parser.add_argument('--scheduler', type=str, default='StepLR', help='scheduler type (default: StepLR)')
-    parser.add_argument('--lr_decay_step', type=int, default=20, help='lr decay step (default: 50)')
-    parser.add_argument('--early_stopping', type=int, default=10, help='early stopping type (default: StepLR)')
-    parser.add_argument('--lr', type=float, default=1e-2, help='learning rate (default: 1e-2)')
+    parser.add_argument('--lr_decay_step', type=int, default=30, help='lr decay step (default: 20)')
+    parser.add_argument('--early_stopping', type=int, default=10, help='early stopping type (default: 10)')
+    parser.add_argument('--lr', type=float, default=1e-4, help='learning rate (default: 1e-2)')
     parser.add_argument('--drop_ratio', type=float, default=0.1, help='ratio for drop out (default: 0.1)')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='bce_loss', help='criterion type (default: cross_entropy)')
     parser.add_argument('--embedding_dim', type=int, default=10, help='embedding dimention(default: 10)')
     parser.add_argument('--name', type=str, default='experiment', help='model save at ./exp/{name}')
-    parser.add_argument('--nagative_num',type=int, default=50, help='negative sample numbers')
+    parser.add_argument('--negative_num',type=int, default=100, help='negative sample numbers')
     parser.add_argument('--attr', type=str ,default="genre", help='attributes type ')
     
-    parser.add_argument('--data_dir', type=str ,default= 'data/train/', help='attribute data directory')
+    parser.add_argument('--data_dir', type=str ,default= '/opt/ml/input/data/train/', help='attribute data directory')
     # Container env
     
     args = parser.parse_args()

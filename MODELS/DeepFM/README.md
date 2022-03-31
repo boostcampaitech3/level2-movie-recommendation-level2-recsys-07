@@ -28,7 +28,7 @@ version 0.1
 |------|:------:|------|
 |seed|42| random seed|
 |epoch|100| epoch|
-|batchsize|1024| batch size|
+|batch_size|1024| batch size|
 |dataset|RatingDataset| dataset name|
 |model|DeepFM| model name|
 |optimizer|Adam| optimizer name|
@@ -36,14 +36,14 @@ version 0.1
 |lr_decay_step|50| StepLR 반감기|
 |early_stopping|10| early stopping step size|
 |lr|1e-2| learning rate|
-|drop_rate|0.1|drop_rate|
+|drop_ratio|0.1|drop_rate|
 |val_ratio|0.2|validation data ratio|
 |criterion|cross_entropy|loss function|
 |embedding_dim|10|embedding dimention|
 |name|experiment| model expriment name|
 
 
-## Args 추가적으로 필요!
+## Args 추가적으로 필요! 반영 완료
 - args.nagative_num: neg sample 수
 - args.attr: 'genre', 'director' 등 str 타입
     
