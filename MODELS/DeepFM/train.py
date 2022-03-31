@@ -2,15 +2,16 @@ import argparse
 import glob
 from importlib import import_module
 import multiprocessing
-from nis import match
 import os
 import random
 import re
 import csv
+import pandas as pd
 
-from tqdm import tqdm
+import tqdm
+from tqdm.auto import tqdm
+
 from pathlib import Path
-
 
 import numpy as np
 import torch
@@ -21,7 +22,7 @@ from torch.utils.data import DataLoader, Dataset
 
 import mlflow
 
-from dataset import *
+from datasets import *
 from loss import create_criterion
 
 #seed fix
@@ -36,7 +37,7 @@ def seed_setting(seed):
 
     # CuDDN option
     torch.backends.cudnn.deterministic = True
-    torch.backends.cuddn.benchmark = False
+    torch.backends.cudnn.benchmark = False
 
     # numpy rand seed
     np.random.seed(seed)
@@ -69,19 +70,21 @@ def train(args):
     seed_setting(args.seed)
     
     # path increment
-    save_dir = increment_path(os.path.join(r'./exp', args.path))
+    save_dir = increment_path(os.path.join(r'./exp', args.name))
 
     # cuda setting
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # --dataset
-    dataset_module = getattr(import_module("dataset"), args.dataset)
-
-    dataset = dataset_module() # TODO
+    data_dir = 'data/train/' # TODO: args.data_dir 추가 
+    rating_df = pd.read_csv(data_dir+'rating.csv')
+    attr_df = pd.read_csv(data_dir+'genre.csv')  # TODO: args.attr 추가 (str)
+    dataset_module = getattr(import_module("datasets"), args.dataset)
+    dataset = dataset_module(args, rating_df, attr_df) # TODO
 
     # train_loader, valid_loader
-    valid_size = len(dataset) * args.val_ratio # default val_ratio = 0.2
+    valid_size = int( len(dataset) * args.val_ratio) # default val_ratio = 0.2
     train_size = len(dataset) - valid_size
     
     train_dataset, valid_dataset = torch.utils.data.random_split(dataset,[train_size,valid_size])
@@ -120,8 +123,7 @@ def train(args):
         embedding_dim = emb_dim,
         mlp_dims = [30,20,10],
         drop_rate = args.drop_rate # drop rate : 0.1
-    )
-    model.to(device)
+    ).to(device)
 
     # --loss
     criterion = create_criterion(args.criterion)  # default: cross_entropy
@@ -176,9 +178,13 @@ def train(args):
                 train_loss = loss_value / 100
                 train_acc = matches / args.batch_size / 100
                 current_lr = optimizer.get_last_lr()
-                print(
-                    f"Epoch[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)}) || "
-                    f"training loss {train_loss:4.4} || training accuracy {train_acc:4.2%} || lr {current_lr}"
+                pbar.set_postfix(
+                    {
+                        "Epoch" : f"[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)})",
+                        "loss" : f"{train_loss:4.4}",
+                        "accuracy" : f"{train_acc}",
+                        "lr" : f"{current_lr}"
+                    }
                 )
                 loss_value = 0
                 matches = 0
@@ -235,7 +241,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')
     parser.add_argument('--epochs', type=int, default=100, help='number of epochs to train (default: 100)')
     parser.add_argument('--batchsize', type=int, default=1024, help='number of batch size in each eposh (default: 1024)')
-    parser.add_argument('--dataset', type=str, default='default', help='dataset type (default: dataset)')
+    parser.add_argument('--dataset', type=str, default='RatingDataset', help='dataset type (default: dataset)')
     parser.add_argument('--model', type=str, default='DeepFM', help='model type (default: DeepFM)')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
     parser.add_argument('--scheduler', type=str, default='StepLR', help='scheduler type (default: StepLR)')
