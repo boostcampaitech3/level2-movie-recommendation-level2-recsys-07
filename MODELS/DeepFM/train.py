@@ -82,7 +82,6 @@ def train(args):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # --dataset
-    #data_dir = 'data/train/' # TODO: args.data_dir 추가 
     rating_df = pd.read_csv(args.data_dir+ 'rating.csv')
 
     attr_path = os.path.join(args.data_dir,(args.attr + '.csv'))
