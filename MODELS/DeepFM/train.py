@@ -37,7 +37,7 @@ def seed_setting(seed):
 
     # CuDDN option
     torch.backends.cudnn.deterministic = True
-    torch.backends.cuddn.benchmark = False
+    torch.backends.cudnn.benchmark = False
 
     # numpy rand seed
     np.random.seed(seed)
@@ -70,7 +70,7 @@ def train(args):
     seed_setting(args.seed)
     
     # path increment
-    save_dir = increment_path(os.path.join(r'./exp', args.path))
+    save_dir = increment_path(os.path.join(r'./exp', args.name))
 
     # cuda setting
     use_cuda = torch.cuda.is_available()
@@ -84,7 +84,7 @@ def train(args):
     dataset = dataset_module(args, rating_df, attr_df) # TODO
 
     # train_loader, valid_loader
-    valid_size = len(dataset) * args.val_ratio # default val_ratio = 0.2
+    valid_size = int( len(dataset) * args.val_ratio) # default val_ratio = 0.2
     train_size = len(dataset) - valid_size
     
     train_dataset, valid_dataset = torch.utils.data.random_split(dataset,[train_size,valid_size])
@@ -178,9 +178,13 @@ def train(args):
                 train_loss = loss_value / 100
                 train_acc = matches / args.batch_size / 100
                 current_lr = optimizer.get_last_lr()
-                print(
-                    f"Epoch[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)}) || "
-                    f"training loss {train_loss:4.4} || training accuracy {train_acc:4.2%} || lr {current_lr}"
+                pbar.set_postfix(
+                    {
+                        "Epoch" : f"[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)})",
+                        "loss" : f"{train_loss:4.4}",
+                        "accuracy" : f"{train_acc}",
+                        "lr" : f"{current_lr}"
+                    }
                 )
                 loss_value = 0
                 matches = 0
