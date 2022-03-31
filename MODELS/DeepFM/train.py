@@ -61,6 +61,10 @@ def increment_path(path):
         n = max(i) + 1 if i else 2
         return f"{path}{n}"
 
+def get_lr(optimizer):
+    for param_group in optimizer.param_groups:
+        return param_group['lr']
+
 # mlflow setting
 def mlflow_set():
     return
@@ -71,16 +75,19 @@ def train(args):
     seed_setting(args.seed)
     
     # path increment
-    save_dir = increment_path(os.path.join(r'./exp', args.name))
-
+    save_dir = increment_path(os.path.join('./exp/', args.name))
+    os.makedirs(save_dir)
     # cuda setting
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # --dataset
-    data_dir = 'data/train/' # TODO: args.data_dir 추가 
-    rating_df = pd.read_csv(data_dir+'rating.csv')
-    attr_df = pd.read_csv(data_dir+'genre.csv')  # TODO: args.attr 추가 (str)
+    #data_dir = 'data/train/' # TODO: args.data_dir 추가 
+    rating_df = pd.read_csv(args.data_dir+ 'rating.csv')
+
+    attr_path = os.path.join(args.data_dir,(args.attr + '.csv'))
+    attr_df = pd.read_csv(attr_path) 
+
     dataset_module = getattr(import_module("datasets"), args.dataset)
     dataset = dataset_module(args, rating_df, attr_df) # TODO
 
@@ -91,7 +98,7 @@ def train(args):
     train_dataset, valid_dataset = torch.utils.data.random_split(dataset,[train_size,valid_size])
     
     train_loader = DataLoader(train_dataset,
-        batch_size = args.batchsize, #default batch_size = 1024
+        batch_size = args.batch_size, #default batch_size = 1024
         shuffle = True,
         num_workers = multiprocessing.cpu_count()//2,
         pin_memory=use_cuda,
@@ -100,7 +107,7 @@ def train(args):
         )
     
     valid_loader = DataLoader(valid_dataset, 
-        batch_size = args.batchsize, #default batch_size = 1024
+        batch_size = args.batch_size, #default batch_size = 1024
         shuffle = True,
         num_workers = multiprocessing.cpu_count()//2,
         pin_memory=use_cuda,
@@ -176,13 +183,13 @@ def train(args):
             # TODO : log interver
             if(idx + 1) % 100 == 0:
                 train_loss = loss_value / 100
-                train_acc = matches / args.batch_size / 100
-                current_lr = optimizer.get_last_lr()
+                train_acc = (matches / args.batch_size) / 100
+                current_lr = get_lr(optimizer)
                 pbar.set_postfix(
                     {
                         "Epoch" : f"[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)})",
                         "loss" : f"{train_loss:4.4}",
-                        "accuracy" : f"{train_acc}",
+                        "accuracy" : f"{train_acc:4.2}",
                         "lr" : f"{current_lr}"
                     }
                 )
@@ -208,19 +215,19 @@ def train(args):
                 val_loss += loss.item()
                 val_matches += (result == y).sum().float()
 
-            val_acc = val_matches/valid_size * 100
+            val_acc = val_matches/valid_size
             val_loss = val_loss/valid_size
             best_val_loss = min(best_val_loss, val_loss)
             
             if val_acc > best_val_acc:
                 print(f"New best model for val accuracy : {val_acc:4.2%}! saving the best model..")
-                torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
+                torch.save(model.state_dict(), f"{save_dir}/best.pth")
                 best_val_acc = val_acc
                 stop_counter = 0
             else:
                 stop_counter += 1
                 print(f"!!! Early stop counter = {stop_counter}/{patience}")
-            torch.save(model.module.state.dict(), f"{save_dir}/last.pth")
+            torch.save(model.state.dict(), f"{save_dir}/last.pth")
             print(
                 f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || "
                 f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2}"
@@ -252,8 +259,11 @@ if __name__ == '__main__':
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='bce_loss', help='criterion type (default: cross_entropy)')
     parser.add_argument('--embedding_dim', type=int, default=10, help='embedding dimention(default: 10)')
-    parser.add_argument('--name', default='experiment1', help='model save at ./exp/{name}')
+    parser.add_argument('--name', type=str, default='experiment1', help='model save at ./exp/{name}')
+    parser.add_argument('--nagative_num',type=int, default=50, help='negative sample numbers')
+    parser.add_argument('--attr', type=str ,default="genre", help='attributes type ')
     
+    parser.add_argument('--data_dir', type=str ,default= 'data/train/', help='attribute data directory')
     # Container env
     
     args = parser.parse_args()
