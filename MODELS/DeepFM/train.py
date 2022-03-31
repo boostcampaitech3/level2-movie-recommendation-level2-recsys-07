@@ -6,6 +6,7 @@ import os
 import random
 import re
 import csv
+import pandas as pd
 
 import tqdm
 from tqdm.auto import tqdm
@@ -21,7 +22,7 @@ from torch.utils.data import DataLoader, Dataset
 
 import mlflow
 
-from dataset import *
+from datasets import *
 from loss import create_criterion
 
 #seed fix
@@ -76,9 +77,11 @@ def train(args):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # --dataset
-    dataset_module = getattr(import_module("dataset"), args.dataset)
-
-    dataset = dataset_module() # TODO
+    data_dir = 'data/train/' # TODO: args.data_dir 추가 
+    rating_df = pd.read_csv(data_dir+'rating.csv')
+    attr_df = pd.read_csv(data_dir+'genre.csv')  # TODO: args.attr 추가 (str)
+    dataset_module = getattr(import_module("datasets"), args.dataset)
+    dataset = dataset_module(args, rating_df, attr_df) # TODO
 
     # train_loader, valid_loader
     valid_size = len(dataset) * args.val_ratio # default val_ratio = 0.2
@@ -234,7 +237,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')
     parser.add_argument('--epochs', type=int, default=100, help='number of epochs to train (default: 100)')
     parser.add_argument('--batchsize', type=int, default=1024, help='number of batch size in each eposh (default: 1024)')
-    parser.add_argument('--dataset', type=str, default='default', help='dataset type (default: dataset)')
+    parser.add_argument('--dataset', type=str, default='RatingDataset', help='dataset type (default: dataset)')
     parser.add_argument('--model', type=str, default='DeepFM', help='model type (default: DeepFM)')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
     parser.add_argument('--scheduler', type=str, default='StepLR', help='scheduler type (default: StepLR)')

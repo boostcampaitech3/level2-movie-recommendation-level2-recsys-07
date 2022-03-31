@@ -29,7 +29,7 @@ version 0.1
 |seed|42| random seed|
 |epoch|100| epoch|
 |batchsize|1024| batch size|
-|dataset|#TODO | dataset name|
+|dataset|RatingDataset| dataset name|
 |model|DeepFM| model name|
 |optimizer|Adam| optimizer name|
 |scheduler|StepLR| scheduler|
@@ -41,4 +41,9 @@ version 0.1
 |criterion|cross_entropy|loss function|
 |embedding_dim|10|embedding dimention|
 |name|experiment| model expriment name|
+
+
+## Args 추가적으로 필요!
+- args.nagative_num: neg sample 수
+- args.attr: 'genre', 'director' 등 str 타입
     
