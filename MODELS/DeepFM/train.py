@@ -2,15 +2,15 @@ import argparse
 import glob
 from importlib import import_module
 import multiprocessing
-from nis import match
 import os
 import random
 import re
 import csv
 
-from tqdm import tqdm
-from pathlib import Path
+import tqdm
+from tqdm.auto import tqdm
 
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -120,8 +120,7 @@ def train(args):
         embedding_dim = emb_dim,
         mlp_dims = [30,20,10],
         drop_rate = args.drop_rate # drop rate : 0.1
-    )
-    model.to(device)
+    ).to(device)
 
     # --loss
     criterion = create_criterion(args.criterion)  # default: cross_entropy
