@@ -240,7 +240,7 @@ if __name__ == '__main__':
     # Data and model checkpoints
     parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')
     parser.add_argument('--epochs', type=int, default=100, help='number of epochs to train (default: 100)')
-    parser.add_argument('--batchsize', type=int, default=1024, help='number of batch size in each eposh (default: 1024)')
+    parser.add_argument('--batch_size', type=int, default=1024, help='number of batch size in each eposh (default: 1024)')
     parser.add_argument('--dataset', type=str, default='RatingDataset', help='dataset type (default: dataset)')
     parser.add_argument('--model', type=str, default='DeepFM', help='model type (default: DeepFM)')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
