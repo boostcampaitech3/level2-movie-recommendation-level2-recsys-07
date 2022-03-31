@@ -9,4 +9,4 @@ submission.csv
 : recall@10 값이 0.0860 나온 정답 submission 파일입니다.
 
 user_movie_interaction.csv
-: UIIMatrix_Maker.py의 결과로 나오는 행렬입니다.
+: UIIMatrix_Maker.py의 결과로 나오는 행렬입니다. 
