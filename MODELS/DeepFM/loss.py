@@ -8,7 +8,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 _criterion_entrypoints = {
-    'bce_loss': nn.BCELoss
+    'bce_loss': nn.BCELoss,
+    'mse_loss': nn.MSELoss
 }
 
 def criterion_entrypoint(criterion_name):
