@@ -82,9 +82,9 @@ def train(args):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # --dataset
-    rating_df = pd.read_csv(args.data_dir+ 'rating.csv')
+    rating_df = pd.read_csv(os.path.join(args.data_dir, 'rating.csv'))
 
-    attr_path = os.path.join(args.data_dir,(args.attr + '.csv'))
+    attr_path = os.path.join(args.data_dir, (args.attr + '.csv'))
     attr_df = pd.read_csv(attr_path) 
 
     dataset_module = getattr(import_module("datasets"), args.dataset)
@@ -184,7 +184,7 @@ def train(args):
             # TODO : log interver
             if(idx + 1) % 100 == 0:
                 train_loss = loss_value / 100
-                train_acc = matches / args.batch_size
+                train_acc = matches / 100 / len(result)
                 current_lr = get_lr(optimizer)
                 pbar.set_postfix(
                     {
@@ -216,8 +216,8 @@ def train(args):
                 val_loss += loss.item()
                 val_matches += (result == y).sum().float()
 
-            val_acc = val_matches/len(valid_dataset)
-            val_loss = val_loss/len(valid_dataset)
+            val_acc = val_matches / len(valid_dataset)
+            val_loss = val_loss / len(valid_dataset)
             best_val_loss = min(best_val_loss, val_loss)
             
             if val_acc > best_val_acc:
