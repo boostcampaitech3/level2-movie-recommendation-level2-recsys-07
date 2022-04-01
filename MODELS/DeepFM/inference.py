@@ -1,4 +1,5 @@
 import argparse
+import enum
 from importlib import import_module
 import os
 import multiprocessing
@@ -7,12 +8,12 @@ from sklearn.utils import shuffle
 import torch
 from torch.utils.data import DataLoader
 from models import *
-
+from datasets import *
 import tqdm
 from tqdm.auto import tqdm
 
 def load_model(saved_model, input_dims, device, args): # TODO : path define
-    model_cls = getattr(import_module("model"), args.model)
+    model_cls = getattr(import_module("models"), args.model)
     
     model = model_cls(
         args = args,
@@ -34,57 +35,75 @@ def inference(args):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # path define
+    rating_dir = args.rating_dir
+    attr_dir = args.attr_dir
     # model load path
-    # data load path
+    model_dir = args.model_dir
+    output_dir = args.output_dir
     # output path
 
-    # TODO : load data from path
-    dataset_module = getattr(import_module("dataset"), args.dataset)
-    dataset = dataset_module(
-        # TODO : 
-    )
+    dataset = InferenceDataset(args, rating_dir, attr_dir)
     
-    # TODO :  data loader
     loader = DataLoader(
         dataset,
         batch_size=args.batch_size,
-        shuffle = False,
-        num_workers = multiprocessing.cpu_count()//2,shuffle=False,
+        num_workers = 4,
+        shuffle=False,
         pin_memory=use_cuda,
+        drop_last=False
     )
     
-    # TODO : load model
-    n_users = dataset.get_users()
-    n_items = dataset.get_items()
+    n_users = dataset.get_users()# 31360 #num of users
+    n_items = dataset.get_items()# 6807 #num of items
     n_attributes = dataset.get_attributes()
     input_dims = [n_users,n_items,n_attributes]
     
-    model = load_model(model_dir, input_dims,device).to(device)
+    model = load_model(model_dir, input_dims,device,args).to(device)
     model.eval()
 
-    # TODO : how to get top 10?
+
     print("Calculating inference results..")
+    ratings = { value:[] for key, value in dataset.user_dict.items()}
+
     with torch.no_grad():
         pbar = tqdm(enumerate(loader), total = len(loader))
         for idx, batch in pbar:
-            output = model(batch)
+            x = batch.to(device) #[B, 3]
+            output = model(x) #[B]
+            for info, score in zip(x,output):
+                user, item = dataset.decode_offset(info.cpu())
+                ratings[user].append([score.item(),item])
+    
+    info = []
+    for user, rating in ratings.items():
+        rating.sort(key=lambda x:x[0])
+        for item in rating[-10:]:
+            info.append([user,item[1]])
+    
+    info = pd.DataFrame(info, columns=['user','item'])
+    info.to_csv(os.path.join(output_dir,f"submission.csv"),index=False)
 
     print("Inference Done!")
 
-    #
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
     #Data
     parser.add_argument('--batch_size', type=int, default=100, help='input batch size for validing (default: 1000)')
-    parser.add_argument('--dataset', type=str)
     parser.add_argument('--embedding_dim', type=int, default=10, help='embedding dimention(default: 10)')
+    parser.add_argument('--attr', type=str, default='genre', help='embedding dimention(default: 10)')
+
+    parser.add_argument('--rating_dir', type=str, default='/opt/ml/input/data/train/rating.csv')
+    parser.add_argument('--attr_dir', type=str, default='/opt/ml/input/data/train/genre.csv')
+    
 
     #model parameters
+    parser.add_argument('--model', type=str, default='DeepFM', help='model type (default: DeepFM)')
+    parser.add_argument('--model_dir', type=str, default="/opt/ml/input/exp/experiment2", help='model pth directory')
+    parser.add_argument('--drop_ratio', type=float, default=0.1)
 
+    parser.add_argument('--output_dir', type=str, default="/opt/ml/input/output", help='output directory')
 
-    arsg = parser.parse_args()
-
-    os.makedirs()
+    args = parser.parse_args()
 
     inference(args)
