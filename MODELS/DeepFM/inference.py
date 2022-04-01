@@ -4,7 +4,7 @@ from importlib import import_module
 import os
 import multiprocessing
 from sklearn.utils import shuffle
-
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from models import *
@@ -37,28 +37,30 @@ def inference(args):
     # path define
     rating_dir = args.rating_dir
     attr_dir = args.attr_dir
+    
     # model load path
     model_dir = args.model_dir
-    output_dir = args.output_dir
+    
     # output path
-
+    output_dir = args.output_dir
+    
     dataset = InferenceDataset(args, rating_dir, attr_dir)
     
     loader = DataLoader(
         dataset,
-        batch_size=args.batch_size,
+        batch_size = args.batch_size,
         num_workers = 4,
-        shuffle=False,
-        pin_memory=use_cuda,
-        drop_last=False
+        shuffle = False,
+        pin_memory = use_cuda,
+        drop_last = False
     )
     
-    n_users = dataset.get_users()# 31360 #num of users
-    n_items = dataset.get_items()# 6807 #num of items
+    n_users = dataset.get_users() # 31360 #num of users
+    n_items = dataset.get_items() # 6807 #num of items
     n_attributes = dataset.get_attributes()
-    input_dims = [n_users,n_items,n_attributes]
+    input_dims = [n_users, n_items, n_attributes]
     
-    model = load_model(model_dir, input_dims,device,args).to(device)
+    model = load_model(model_dir, input_dims, device,args).to(device)
     model.eval()
 
 
@@ -69,16 +71,17 @@ def inference(args):
         pbar = tqdm(enumerate(loader), total = len(loader))
         for idx, batch in pbar:
             x = batch.to(device) #[B, 3]
-            output = model(x) #[B]
-            for info, score in zip(x,output):
-                user, item = dataset.decode_offset(info.cpu())
-                ratings[user].append([score.item(),item])
+            output = model(x) #[B] ///     item[idx] = x 에 대한 확률 output[idx]
+            
+            output_best10 = np.argpartition(output, -10)[-10:]
+            user, _ = dataset.decode_offset(x.cpu())
+            ratings[user].extend(output_best10)
     
     info = []
     for user, rating in ratings.items():
-        rating.sort(key=lambda x:x[0])
+        rating.sort(key = lambda x : x[0])
         for item in rating[-10:]:
-            info.append([user,item[1]])
+            info.append([user, item[1]])
     
     info = pd.DataFrame(info, columns=['user','item'])
     info.to_csv(os.path.join(output_dir,f"submission.csv"),index=False)
