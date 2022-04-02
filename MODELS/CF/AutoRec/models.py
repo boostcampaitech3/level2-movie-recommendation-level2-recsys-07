@@ -1,7 +1,16 @@
+import numpy as np
+import random
+import pandas as pd
+from datetime import datetime, date
+from tqdm.notebook import tqdm
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import log_loss, accuracy_score, precision_score, recall_score
+from tqdm import tqdm
+
 import torch
 import torch.nn as nn
 from torch.nn.init import normal_
-
+from torch.utils.data import TensorDataset, DataLoader
 
 
 def activation_layer(activation_name='relu'):
@@ -27,6 +36,8 @@ def activation_layer(activation_name='relu'):
             activation = nn.LeakyReLU()
         elif activation_name.lower() == 'none':
             activation = None
+        elif activation_name.lower() == "identity" :
+            activation = nn.Identity()
     elif issubclass(activation_name, nn.Module):
         activation = activation_name()
     else:
@@ -37,13 +48,13 @@ def activation_layer(activation_name='relu'):
     
 class AutoRec(nn.Module) :
 
-    def __init__(self, args):
+    def __init__(self, args, input_dims):
         super(AutoRec, self).__init__()
         
         self.args = args
         # initialize Class attributes
-        self.input_dim = args.input_dim
-        self.emb_dim = args.emb_dim
+        self.input_dim = input_dims
+        self.emb_dim = args.embedding_dim
         self.hidden_activation = args.hidden_activation
         self.out_activation = args.out_activation
 
