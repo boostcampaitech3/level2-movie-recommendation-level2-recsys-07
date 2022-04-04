@@ -3,8 +3,35 @@ from torch.utils.data import Dataset
 from utils import neg_sample, join_attribute, feature_matrix
 
 import pandas as pd
+import numpy as np
 
 from tqdm import tqdm
+
+
+class TestDataset(Dataset):
+    def __init__(self, args, rating_df, attr_df):
+        self.args = args
+        #self.rating_df = neg_sample(rating_df, self.args.negative_num) # args.negative num
+        self.attr_df = attr_df
+
+        self.data = pd.read_csv('data/train/joined_rating_df.csv')
+
+        self.X, self.y = feature_matrix(self.data, self.args.attr) # args.attr
+
+    def __getitem__(self, index):
+        return self.X[index], self.y[index]
+
+    def get_users(self):
+        return len(set(self.data.loc[:, 'user']))
+
+    def get_items(self):
+        return len(set(self.data.loc[:, 'item']))
+
+    def get_attributes(self):
+        return len(set(self.data.loc[:, self.args.attr])) # args.attr
+
+    def __len__(self):
+        return len(self.data)
 
 class RatingDataset(Dataset):
     def __init__(self, args, rating_df, attr_df):
@@ -116,14 +143,16 @@ class InferenceDataset(Dataset):
 
         return X.long()
 
-    def decode_offset(self, X):
-        user_idx = X[0].item() - self.offsets[0]
-        item_idx = X[1].item() - self.offsets[1]
+    def decode_offset(self, user_id: int, item_id: np.array) -> tuple(int,list):
+        user_idx = user_id - self.offsets[0] #[B]
+        item_idx_array = item_id - self.offsets[1] #[B]
         #attr_idx = X[2] - self.offset[2]
 
-        user = self.user_dict[user_idx]
-        item = self.item_dict[item_idx]
-        return user, item
+        #user = self.user_dict[user_idx]
+        #item = self.item_dict[item_idx]
+        users = self.user_dict[user_idx]
+        items = [self.item_dict[i] for i in item_idx_array]
+        return users, items
 
     def __getitem__(self, index):
         return self.X[index]
