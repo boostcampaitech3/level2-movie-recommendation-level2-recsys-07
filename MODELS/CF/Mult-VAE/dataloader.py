@@ -34,15 +34,18 @@ class DataLoader():
         return n_items
     
     def _load_train_data(self):
-        path = os.path.join(self.pro_dir, 'train.csv')
+        path = os.path.join(self.pro_dir, 'train.csv') 
         
-        tp = pd.read_csv(path)
-        n_users = tp['uid'].max() + 1
+        tp = pd.read_csv(path) # 
+        n_users = tp['uid'].max() + 1 # 유저의 수는 유저 index의 최대 값 + 1
+        # train data는 shuffle된 유저 index 0 ~ 25359 번째 까지 0부터 순서대로 포함되어 있기 때문에 max + 1 해도 된다.
 
         rows, cols = tp['uid'], tp['sid']
         data = sparse.csr_matrix((np.ones_like(rows),
                                  (rows, cols)), dtype='float64',
                                  shape=(n_users, self.n_items))
+        # sparse matrix를 압축된 형태로 변경해준다. M x N sparse matrix -> 실제로 값이 0이 아닌 칸에 대해 (x, y) value 반환
+        # row = user_index, col = item_index, value = 모든 값이 1인 vector
         return data
     
     def _load_tr_te_data(self, datatype='test'):
@@ -52,11 +55,11 @@ class DataLoader():
         tp_tr = pd.read_csv(tr_path)
         tp_te = pd.read_csv(te_path)
 
-        start_idx = min(tp_tr['uid'].min(), tp_te['uid'].min())
-        end_idx = max(tp_tr['uid'].max(), tp_te['uid'].max())
+        start_idx = min(tp_tr['uid'].min(), tp_te['uid'].min()) # 가장 index가 작은 유저 index = start_idx
+        end_idx = max(tp_tr['uid'].max(), tp_te['uid'].max()) # end_idx = 가장 index가 큰 유저
 
-        rows_tr, cols_tr = tp_tr['uid'] - start_idx, tp_tr['sid']
-        rows_te, cols_te = tp_te['uid'] - start_idx, tp_te['sid']
+        rows_tr, cols_tr = tp_tr['uid'] - start_idx, tp_tr['sid'] # rows_tr를 0부터 시작하게끔, sid는 그대로
+        rows_te, cols_te = tp_te['uid'] - start_idx, tp_te['sid'] # rows_te를 0부터 시작하게끔, sid는 그대로
 
         data_tr = sparse.csr_matrix((np.ones_like(rows_tr),
                                     (rows_tr, cols_tr)), dtype='float64', shape=(end_idx - start_idx + 1, self.n_items))
