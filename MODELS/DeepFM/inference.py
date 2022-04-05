@@ -80,7 +80,7 @@ def inference(args):
     outputs = rating.numpy()
 
     info = []
-    for user_id in range(10):
+    for user_id in range(n_users):
         idx = np.where(outputs[:,0].astype(int) == user_id)
         user_rating = outputs[idx[0]]
         output_best10_idx = np.argpartition(user_rating[:,-1], -10)[-10:]
@@ -99,16 +99,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
     #Data
-    parser.add_argument('--batch_size', type=int, default=100, help='input batch size for validing (default: 1000)')
+    parser.add_argument('--batch_size', type=int, default=1000, help='input batch size for validing (default: 1000)')
     parser.add_argument('--embedding_dim', type=int, default=10, help='embedding dimention(default: 10)')
-    parser.add_argument('--attr', type=str, default='genre', help='embedding dimention(default: 10)')
+    parser.add_argument('--attr', type=str, default='writer', help='embedding dimention(default: 10)')
 
     parser.add_argument('--rating_dir', type=str, default='/opt/ml/input/data/train/rating.csv')
-    parser.add_argument('--attr_dir', type=str, default='/opt/ml/input/data/train/genre.csv')
+    parser.add_argument('--attr_dir', type=str, default='/opt/ml/input/data/train/writer.csv')
     
     #model parameters
     parser.add_argument('--model', type=str, default='DeepFM', help='model type (default: DeepFM)')
-    parser.add_argument('--model_dir', type=str, default="/opt/ml/input/exp/experiment2", help='model pth directory')
+    parser.add_argument('--model_dir', type=str, default="/opt/ml/input/exp/expriment", help='model pth directory')
     parser.add_argument('--drop_ratio', type=float, default=0.1)
 
     parser.add_argument('--output_dir', type=str, default="/opt/ml/input/output", help='output directory')
