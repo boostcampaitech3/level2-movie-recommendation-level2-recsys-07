@@ -17,8 +17,6 @@ class TestDataset(Dataset):
         print("_feature_matrix start")
         self.X, self.y = feature_matrix(self.data ,self.args.attr) # args.attr
 
-
-
     def __getitem__(self, index):
         return self.X[index], self.y[index]
 
@@ -36,11 +34,20 @@ class TestDataset(Dataset):
 
 class RatingDataset(Dataset):
     def __init__(self, args, rating_df, attr_df):
+        """
+        Args:
+            args      : arguments
+            rating_df : ["user", "item", "rating"] rating=1.0
+            attr_df   : ["item", "genre", "writer"] if attr_df = genre_writer.csv
+        """
+        
         self.args = args
         self.rating_df = neg_sample(rating_df, self.args.negative_num) # args.negative num
         self.attr_df = attr_df
-        self.data = join_attribute(self.rating_df, self.attr_df, self.args.attr) # args.attr
-        self.X, self.y = feature_matrix(self.data, self.args.attr) # args.attr
+        
+        # self.data = ["user", "item", "rating", "genre", "writer"]
+        self.data = join_attribute(self.rating_df, self.attr_df) # args.attr
+        self.X, self.y = feature_matrix(data=self.data, attr=["genre", "writer"]) # args.attr
 
     def __getitem__(self, index):
         return self.X[index], self.y[index]
@@ -51,8 +58,11 @@ class RatingDataset(Dataset):
     def get_items(self):
         return len(set(self.data.loc[:, 'item']))
 
-    def get_attributes(self):
-        return len(set(self.data.loc[:, self.args.attr])) # args.attr
+    def get_attributes1(self):
+        return len(set(self.data.loc[:, self.args.attr[0]])) # args.attr
+    
+    def get_attributes2(self):
+        return len(set(self.data.loc[:, self.args.attr[1]])) # args.attr
 
     def __len__(self):
         return len(self.data)
