@@ -11,12 +11,13 @@ from tqdm import tqdm
 class TestDataset(Dataset):
     def __init__(self, args, rating_df, attr_df):
         self.args = args
-        #self.rating_df = neg_sample(rating_df, self.args.negative_num) # args.negative num
         self.attr_df = attr_df
 
         self.data = pd.read_csv('data/train/joined_rating_df.csv')
+        print("_feature_matrix start")
+        self.X, self.y = feature_matrix(self.data ,self.args.attr) # args.attr
 
-        self.X, self.y = feature_matrix(self.data, self.args.attr) # args.attr
+
 
     def __getitem__(self, index):
         return self.X[index], self.y[index]
@@ -124,6 +125,7 @@ class InferenceDataset(Dataset):
         for user, u_items in tqdm(user_rating.iteritems()):
             un_watched = [i for i in items if i not in u_items]
             data += [[user,i] for i in un_watched]
+
         return data
 
     def _feature_matrix(self, attr='genre'):
@@ -143,9 +145,9 @@ class InferenceDataset(Dataset):
 
         return X.long()
 
-    def decode_offset(self, user_id: int, item_id: np.array) -> tuple(int,list):
+    def decode_offset(self, user_id: int, item_id: np.array) -> tuple:
         user_idx = user_id - self.offsets[0] #[B]
-        item_idx_array = item_id - self.offsets[1] #[B]
+        item_idx_array = (item_id - self.offsets[1]).astype(int) #[B]
         #attr_idx = X[2] - self.offset[2]
 
         #user = self.user_dict[user_idx]

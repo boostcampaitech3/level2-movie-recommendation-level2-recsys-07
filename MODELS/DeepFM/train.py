@@ -1,4 +1,4 @@
-import argparse
+import argparse, yaml
 import glob
 from importlib import import_module
 import multiprocessing
@@ -25,6 +25,7 @@ import mlflow
 from datasets import *
 from models import *
 from loss import create_criterion
+from utils import dotdict
 
 #seed fix
 def seed_setting(seed):
@@ -68,10 +69,29 @@ def get_lr(optimizer):
 # mlflow setting
 def mlflow_set(args):
     mlflow.set_tracking_uri(args.tracking_server)
-    mlflow.set_experiment("TEST2")
+    mlflow.set_experiment(args.model)
 
-def log_param(args):
-    mlflow.log_params(vars(args))
+#mlflow log_param
+def mlflow_log_setting(args):
+    #param setting
+    mlflow.log_param("seed", args.seed)
+    mlflow.log_param("epochs", args.epochs)
+    mlflow.log_param("batch_size", args.batch_size)
+    mlflow.log_param("dataset", args.dataset)
+    mlflow.log_param("model", args.model)
+    mlflow.log_param("drop_ratio", args.drop_ratio)
+    mlflow.log_param("optimizer", args.optimizer)
+    mlflow.log_param("scheduler", args.scheduler)
+    mlflow.log_param("lr_decay_step", args.lr_decay_step)
+    mlflow.log_param("lr", args.lr)
+    mlflow.log_param("early_stopping", args.early_stopping)
+    mlflow.log_param("criterion", args.val_ratio)
+    mlflow.log_param("embedding_dim", args.val_ratio)
+    mlflow.log_param("name", args.val_ratio)
+    mlflow.log_param("val_ratio", args.val_ratio)
+    mlflow.log_param("negative_num", args.val_ratio)
+    mlflow.log_param("attr", args.val_ratio)
+
 
 #train
 def train(args):
@@ -81,6 +101,7 @@ def train(args):
     # path increment
     save_dir = increment_path(os.path.join('./exp/', args.name))
     os.makedirs(save_dir)
+    
     # cuda setting
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -163,10 +184,10 @@ def train(args):
     #Start Train
     mlflow_set(args)
     with mlflow.start_run() as run:
-        log_param(args)
-
- #       mlflow.pytorch.save_model(model,args.name)
+        mlflow_log_setting(args)
         
+        model_uri = "runs:/{}/{}".format(run.info.run_id, args.model)
+        artifact_uri = mlflow.get_artifact_uri()
         for epoch in range(args.epochs):
             model.train()
             loss_value = 0
@@ -249,8 +270,10 @@ def train(args):
                 best_val_acc = val_acc
                 stop_counter = 0
 
-                mlflow.pytorch.save_state_dict(model.module.state_dict(),"best_pth")
-
+                
+                #mlflow.log_model(model_uri, model)
+                #mlflow.log_artifacts(f"{save_dir}")
+                mlflow.log_artifact(f"{save_dir}/best.pth")
             else:
                 stop_counter += 1
                 print(f"!!! Early stop counter = {stop_counter}/{patience} !!!")
@@ -276,37 +299,40 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
     # config option
-    parser.add_argument('--config', type=bool, default=False, help = 'config using option')
+    parser.add_argument('--config', type=bool, default=True, help = 'config using option') #change if you want to use config.yaml
 
     # Data and model checkpoints
+    parser.add_argument('--user', type = str, default='root', help = 'run user name(default : root' )
     parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')
-    parser.add_argument('--epochs', type=int, default=3, help='number of epochs to train (default: 100)')
+    parser.add_argument('--epochs', type=int, default=100, help='number of epochs to train (default: 100)')
     parser.add_argument('--batch_size', type=int, default=1024, help='number of batch size in each eposh (default: 1024)')
-    parser.add_argument('--dataset', type=str, default='TestDataset', help='dataset type (default: dataset)')
+    parser.add_argument('--dataset', type=str, default='RatingDataset', help='dataset type (default: dataset)')
     parser.add_argument('--model', type=str, default='DeepFM', help='model type (default: DeepFM)')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
     parser.add_argument('--scheduler', type=str, default='StepLR', help='scheduler type (default: StepLR)')
     parser.add_argument('--lr_decay_step', type=int, default=30, help='lr decay step (default: 20)')
     parser.add_argument('--early_stopping', type=int, default=10, help='early stopping type (default: 10)')
-    parser.add_argument('--lr', type=float, default=1e-4, help='learning rate (default: 1e-2)')
+    parser.add_argument('--lr', type=float, default=1e-4, help='learning rate (default: 1e-4)')
     parser.add_argument('--drop_ratio', type=float, default=0.1, help='ratio for drop out (default: 0.1)')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='bce_loss', help='criterion type (default: cross_entropy)')
     parser.add_argument('--embedding_dim', type=int, default=10, help='embedding dimention(default: 10)')
     parser.add_argument('--name', type=str, default='experiment', help='model save at ./exp/{name}')
-    parser.add_argument('--negative_num',type=int, default=1, help='negative sample numbers')
+    parser.add_argument('--negative_num',type=int, default=50, help='negative sample numbers')
     parser.add_argument('--attr', type=str ,default="genre", help='attributes type ')
     
     parser.add_argument('--data_dir', type=str ,default= '/opt/ml/input/data/train/', help='attribute data directory')
-    # Container env
     
+    # mlflow tracking option
     parser.add_argument('--tracking_server', type=str ,default= 'http://35.197.48.164:5000/', help='tracking server')
     args = parser.parse_args()
 
     if args.config == True:
-        print("using config.json option")
-        # TODO: 
+        print("Using config.yaml option")
+        with open('./config.yml') as f: #set config.yml path
+            config = yaml.safe_load(f)
+        args = dotdict(config)
         
     print(args)
-    # Start train
+
     train(args)
