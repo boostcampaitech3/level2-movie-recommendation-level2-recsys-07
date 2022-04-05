@@ -52,6 +52,7 @@ def join_attribute(rating_df, attr_df, attr='genre'):
 
     joined_rating_df = joined_rating_df.sort_values(by=['user'])
     joined_rating_df.reset_index(drop=True, inplace=True)
+    joined_rating_df.to_csv('./joined_rating_df.csv',index=False)
 
     return joined_rating_df
 
@@ -73,3 +74,9 @@ def feature_matrix(data, attr='genre'):
     y = torch.tensor(list(data.loc[:,'rating']))
 
     return X.long(), y.long()
+
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
