@@ -75,6 +75,13 @@ def feature_matrix(data, attr='genre'):
 
     return X.long(), y.long()
 
+
+def get_unpopular_item(rating_df):
+    df = rating_df.pivot_table(index=['item'], aggfunc='size').sort_values(ascending=True)
+    df = df[df < 200]
+    ret = df.index.to_numpy()
+    return set(ret.flatten())
+
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
     __getattr__ = dict.get

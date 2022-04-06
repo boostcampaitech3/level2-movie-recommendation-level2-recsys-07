@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import Dataset
-from utils import neg_sample, join_attribute, feature_matrix
+from utils import neg_sample, join_attribute, feature_matrix, get_unpopular_item
 
 import pandas as pd
 import numpy as np
@@ -117,15 +117,20 @@ class InferenceDataset(Dataset):
         self.X = self._feature_matrix(self.args.attr)
 
     def _inference_sample(self,rating_df):
+
         items = set(rating_df['item'])
-        user_rating = rating_df.groupby('user')['item'].apply(list)
+        data = list()
 
-        data = []
+        unpopular_items = get_unpopular_item(rating_df)
 
-        for user, u_items in tqdm(user_rating.iteritems()):
-            un_watched = [i for i in items if i not in u_items]
-            data += [[user,i] for i in un_watched]
+        for user in tqdm(rating_df["user"].unique()):
+            user_seen_items = set(rating_df[rating_df["user"] == user]["item"])
+            
+            user_unseen_items = items - unpopular_items
+            user_unseen_items = list(user_unseen_items - user_seen_items)
 
+            data.extend([u,i] for u, i in zip([user] * len(user_unseen_items),user_unseen_items))
+        
         return data
 
     def _feature_matrix(self, attr='genre'):
