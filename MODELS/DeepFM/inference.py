@@ -73,15 +73,19 @@ def inference(args):
     with torch.no_grad():
         for batch in tqdm(inference_loader):
             x = batch.to(device) # (batch_size, attr_list)
+            # print ("[DEBUG] model input x-----")
+            # print (x)
+            # print ("--------------------------")
             output = model(x) #[B] ///     item[idx] = x 에 대한 확률 output[idx]
-            
-            preds = torch.concat((x,output.unsqueeze(1)),dim =1) # [B , 4]
-            rating = torch.concat((rating, preds.cpu()), dim = 0)
+            preds = torch.cat((x,output.unsqueeze(1)),dim =1) # [B , 4]
+            rating = torch.cat((rating, preds.cpu()), dim = 0)
     
     outputs = rating.numpy()
 
     info = []
-    for user_id in range(n_users):
+    #-- Select Top 10 items
+    print ("[INFO] Select Top 10 Items..")
+    for user_id in tqdm(range(n_users)):
         idx = np.where(outputs[:,0].astype(int) == user_id)
         user_rating = outputs[idx[0]]
         output_best10_idx = np.argpartition(user_rating[:,-1], -10)[-10:]
@@ -92,7 +96,7 @@ def inference(args):
             info.append([user,item])
         
     info = pd.DataFrame(info, columns=['user','item'])
-    info.to_csv(os.path.join(output_dir,f"submission.csv"),index=False)
+    info.to_csv(os.path.join(output_dir, "submission.csv"),index=False)
 
     print("Inference Done!")
 

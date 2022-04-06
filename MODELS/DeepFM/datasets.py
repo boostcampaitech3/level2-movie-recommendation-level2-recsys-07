@@ -147,7 +147,7 @@ class InferenceDataset(Dataset):
         for user in tqdm(rating_df["user"].unique()):
             user_seen_items = set(rating_df[rating_df["user"] == user]["item"])
             user_unseen_items = list(items - user_seen_items)
-            data.extend([u, i] for u, i in zip([user], user_unseen_items))
+            data.extend([u, i] for u, i in zip([user] * 10, user_unseen_items))
 
 
         return data
@@ -160,12 +160,13 @@ class InferenceDataset(Dataset):
         attr_col1 = torch.tensor(self.data.loc[:, attr[0]])
         attr_col2 = torch.tensor(self.data.loc[:, attr[1]])
 
-        n_user = len(set(user_col))
-        n_item = len(set(item_col))
-        n_attr1 = len(set(attr_col1))
+        n_user = self.get_users()
+        n_item = self.get_items()
+        n_attr1 = self.get_attributes1()
+        print (f"[DEBUG] in _feature_matrix :: n_user({n_user}), item_col({n_item}), n_attr1({n_attr1})")
 
-        offsets = [0, n_user, n_user + n_item, n_user + n_item + n_attr1]
-        for col, offset in zip([user_col, item_col, attr_col1, attr_col2], offsets):
+        self.offsets = [0, n_user, n_user + n_item, n_user + n_item + n_attr1]
+        for col, offset in zip([user_col, item_col, attr_col1, attr_col2], self.offsets):
             col += offset
 
         X = torch.cat(
