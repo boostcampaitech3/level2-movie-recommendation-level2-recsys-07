@@ -84,9 +84,10 @@ def evaluate(model, criterion, data_tr, data_te, is_VAE=False):
             data = data_tr[e_idxlist[start_idx:end_idx]] # TODO : data_tr, data_te의 총 개수가 다르지 않은가? 똑같이 indexing하면 index error 발생 안하나?
             heldout_data = data_te[e_idxlist[start_idx:end_idx]]
             # TODO : 왜 data_tr, data_te 모두 길이가 3000인가?
+            # data_tr.shape (3000,6807)
 
             data_tensor = naive_sparse2tensor(data).to(device)
-
+            # print('data[0]',data_tensor[0].cpu().detach().numpy())
             if is_VAE :
               
               if args.total_anneal_steps > 0:
@@ -106,11 +107,21 @@ def evaluate(model, criterion, data_tr, data_te, is_VAE=False):
             total_loss += loss.item()
 
             # Exclude examples from training set
-            recon_batch = recon_batch.cpu().numpy()
+            recon_batch = recon_batch.cpu().numpy() # probability # valid userindex :26554 = id 14
+
+            ###############################
+            print("★"*80)
+            ff=recon_batch[0][data_tensor[0].cpu().detach().numpy().nonzero()]
+            for fff, f in enumerate(ff):
+                print(fff,f)
+
+            # exit()
+            # print('recon_batch',recon_batch)
+            ###############################
             recon_batch[data.nonzero()] = -np.inf
 
             n100 = NDCG_binary_at_k_batch(recon_batch, heldout_data, 100)
-            r20 = Recall_at_k_batch(recon_batch, heldout_data, 10)
+            r20 = Recall_at_k_batch(recon_batch, heldout_data, 10) # heldout_data : 정답
             r50 = Recall_at_k_batch(recon_batch, heldout_data, 50)
             n100_list.append(n100)
             r20_list.append(r20)
@@ -248,9 +259,11 @@ if __name__ == '__main__':
 
     # 총 495,925개의 (user_index, item_index) instance
     vad_data_tr = numerize(vad_plays_tr, profile2id, show2id) 
+
     vad_data_tr.to_csv(os.path.join(pro_dir, 'validation_tr.csv'), index=False)
 
     vad_data_te = numerize(vad_plays_te, profile2id, show2id)
+
     vad_data_te.to_csv(os.path.join(pro_dir, 'validation_te.csv'), index=False)
 
     # 총 489,948개의 (user_index, item_index) instance
@@ -269,7 +282,7 @@ if __name__ == '__main__':
 
     loader = DataLoader(args.data)
 
-    n_items = loader.load_n_items()
+    n_items = loader.load_n_items() # train에 속한 item id의 갯수 =6807
     train_data = loader.load_data('train') # "(user_index, item_index) 1" 형식의 instance 모음 (index 값을 기준으로 정렬되어 있다)
     vad_data_tr, vad_data_te = loader.load_data('validation') # "(user_index, item_index) 1" 형식의 instance 모음 (index 값을 기준으로 정렬되어 있다)
     test_data_tr, test_data_te = loader.load_data('test') # "(user_index, item_index) 1" 형식의 instance 모음 (index 값을 기준으로 정렬되어 있다)
@@ -281,7 +294,7 @@ if __name__ == '__main__':
     # Build the model
     ###############################################################################
 
-    p_dims = [200, 600, n_items] 
+    p_dims = [200, 600, n_items]  #[200, 600, 6807]
     model = MultiVAE(p_dims).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=args.wd) # Multi VAE 모델은 weight decay = 0 사용하지 않음
