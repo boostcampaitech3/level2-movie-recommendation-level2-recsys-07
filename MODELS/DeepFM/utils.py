@@ -43,6 +43,7 @@ def join_attribute(rating_df, attr_df):
     if os.path.isfile(JOINED_RATING_PATH):
         print(f"[INFO] Joined rating DataFrame exists. Using this csv file...")
         joined_rating_df = pd.read_csv(JOINED_RATING_PATH)
+
     else:
         joined_rating_df = pd.merge(rating_df, attr_df, left_on='item', right_on='item', how='inner')
 

@@ -1,7 +1,7 @@
 #config.yml
 seed : 42                   # random seed
 epochs : 20                 # number of epochs to train
-batch_size: 1024            # number of batch size
+batch_size: 1000              # number of batch size
 dataset: "RatingDataset"    # dataset type
 model : "DeepFM"            # model type
 optimizer: "Adam"           # optimizer type

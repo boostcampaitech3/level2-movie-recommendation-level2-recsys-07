@@ -34,59 +34,60 @@ def inference(args):
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    # path define
+    #-- Define Path (ratings.csv, genre_writer.csv)
     rating_dir = args.rating_dir
     attr_dir = args.attr_dir
     
-    # model load path
+    #-- best.pth model PATH
     model_dir = args.model_dir
     
-    # output path
+    #-- output path
     output_dir = args.output_dir
     
-    dataset = InferenceDataset(args, rating_dir, attr_dir)
-    
-    loader = DataLoader(
-        dataset,
-        batch_size = args.batch_size,
-        num_workers = 4,
-        shuffle = False,
-        pin_memory = use_cuda,
-        drop_last = False
+    #-- Inference DataSet & DataLoader
+    inference_dataset = InferenceDataset(args, rating_dir, attr_dir)
+    inference_loader = DataLoader(
+        inference_dataset,
+        batch_size=args.batch_size,
+        num_workers=4,
+        shuffle=False,
+        pin_memory=use_cuda,
+        drop_last=False
     )
     
-    n_users = dataset.get_users() # 31360 #num of users
-    n_items = dataset.get_items() # 6807 #num of items
-    n_attributes = dataset.get_attributes()
-    input_dims = [n_users, n_items, n_attributes]
+    n_users = inference_dataset.get_users() # 31360 # of users
+    n_items = inference_dataset.get_items() # 6807 # of items
+    n_attributes1 = inference_dataset.get_attributes1()
+    n_attributes2 = inference_dataset.get_attributes2()
+    print (f"n_users={n_users}, n_items={n_items}, n_attr1={n_attributes1}, n_attr2={n_attributes2}")
     
+    input_dims = [n_users, n_items, n_attributes1, n_attributes2]
+    
+    #-- Load model with best parameter.
     model = load_model(model_dir, input_dims, device,args).to(device)
     model.eval()
 
-
-    print("Calculating inference results..")
-    #ratings = { value:[] for key, value in dataset.user_dict.items()}
+    #-- Start INFERENCE
+    print("[DEBUG] Calculating inference results..")
     rating = torch.tensor(()).cpu() # empty tensor
     with torch.no_grad():
-        pbar = tqdm(enumerate(loader), total = len(loader))
-        for idx, batch in pbar:
-            x = batch.to(device) #[B, 3]
+        for batch in tqdm(inference_loader):
+            x = batch.to(device) # (batch_size, attr_list)
             output = model(x) #[B] ///     item[idx] = x 에 대한 확률 output[idx]
             
             preds = torch.concat((x,output.unsqueeze(1)),dim =1) # [B , 4]
-
             rating = torch.concat((rating, preds.cpu()), dim = 0)
     
     outputs = rating.numpy()
 
     info = []
-    for user_id in range(10):
+    for user_id in range(n_users):
         idx = np.where(outputs[:,0].astype(int) == user_id)
         user_rating = outputs[idx[0]]
         output_best10_idx = np.argpartition(user_rating[:,-1], -10)[-10:]
         output_best10 = user_rating[output_best10_idx,1]
         
-        user, movie_list =  dataset.decode_offset(user_id, output_best10)
+        user, movie_list =  inference_dataset.decode_offset(user_id, output_best10)
         for item in movie_list:
             info.append([user,item])
         
@@ -99,20 +100,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
     #Data
-    parser.add_argument('--batch_size', type=int, default=100, help='input batch size for validing (default: 1000)')
+    parser.add_argument('--batch_size', type=int, default=32, help='input batch size for validing (default: 1000)')
     parser.add_argument('--embedding_dim', type=int, default=10, help='embedding dimention(default: 10)')
-    parser.add_argument('--attr', type=str, default='genre', help='embedding dimention(default: 10)')
+    parser.add_argument('--attr', type=str, default=["genre", "writer"], help='embedding dimention(default: 10)')
 
-    parser.add_argument('--rating_dir', type=str, default='/opt/ml/input/data/train/rating.csv')
-    parser.add_argument('--attr_dir', type=str, default='/opt/ml/input/data/train/genre.csv')
+    parser.add_argument('--rating_dir', type=str, default='./data/train/rating.csv')
+    parser.add_argument('--attr_dir', type=str, default='./data/train/genre_writer.csv')
     
     #model parameters
     parser.add_argument('--model', type=str, default='DeepFM', help='model type (default: DeepFM)')
-    parser.add_argument('--model_dir', type=str, default="/opt/ml/input/exp/experiment2", help='model pth directory')
+    parser.add_argument('--model_dir', type=str, default="./exp/experiment3", help='model pth directory')
     parser.add_argument('--drop_ratio', type=float, default=0.1)
 
-    parser.add_argument('--output_dir', type=str, default="/opt/ml/input/output", help='output directory')
+    parser.add_argument('--output_dir', type=str, default="./output", help='output directory')
 
     args = parser.parse_args()
 
+    print (args)
     inference(args)
