@@ -62,6 +62,27 @@ def writer():
     raw_writer_df.to_csv('data/train/writer.csv')
     print("Create writer df!")
 
+def join_genre_writer():
+    
+    #-- 경로 설정
+    GENRE_PATH = './data/train/genre.csv'
+    WRITER_PATH = './data/train/writer.csv'
+    OUTPUT_PATH = './data/train/genre_writer.csv'
+    
+    #-- 이미 파일이 만들어진 적 있는 경우 pass
+    if os.path.isfile(OUTPUT_PATH):
+        print(f'{OUTPUT_PATH} already exists.')
+        return
+    
+    #-- read csv (genre, writer) 
+    genre_df = pd.read_csv(GENRE_PATH)
+    writer_df = pd.read_csv(WRITER_PATH)
+    
+    #-- inner join 2 dataframes
+    joined_df = pd.merge(left=genre_df, right=writer_df, how='inner', on='item')
+    
+    #-- save joined dataframe as "genre_writer.csv"
+    joined_df.to_csv(OUTPUT_PATH, columns=['item', 'genre', 'writer'], index=False)
 
 
 if __name__ == "__main__":
@@ -69,3 +90,4 @@ if __name__ == "__main__":
     genre()
     director()
     writer()
+    join_genre_writer()
