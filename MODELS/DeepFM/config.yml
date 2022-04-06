@@ -1,6 +1,6 @@
 #config.yml
 seed : 42                 # random seed
-epochs : 2              # number of epochs to train
+epochs : 100              # number of epochs to train
 batch_size: 1024          # number of batch size
 dataset: "RatingDataset"      # dataset type
 model : "DeepFM"           # model type
@@ -12,9 +12,9 @@ lr: 1.0e-4                  # learning rate
 drop_ratio: 0.1           # ratio for drop out
 val_ratio: 0.2            # ratio for validaton
 criterion: "bce_loss"     # criterion type
-embedding_dim: 10        # embedding dimention
+embedding_dim: 20        # embedding dimention
 name: "experiment"        # model save at ./exp/expriment
-negative_num : 1          # negative sample numbers
-attr: "genre"              # attributes type
-data_dir: '/opt/ml/input/data/train/'  # train data directory
+negative_num : 50          # negative sample numbers
+attr: "director"              # attributes type
+data_dir: './data/train/'  # train data directory
 tracking_server: 'http://35.197.48.164:5000/'

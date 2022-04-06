@@ -100,18 +100,18 @@ if __name__ == "__main__":
     
     #Data
     parser.add_argument('--batch_size', type=int, default=1000, help='input batch size for validing (default: 1000)')
-    parser.add_argument('--embedding_dim', type=int, default=10, help='embedding dimention(default: 10)')
-    parser.add_argument('--attr', type=str, default='writer', help='embedding dimention(default: 10)')
+    parser.add_argument('--embedding_dim', type=int, default=20, help='embedding dimention(default: 10)')
+    parser.add_argument('--attr', type=str, default='director', help='embedding dimention(default: 10)')
 
-    parser.add_argument('--rating_dir', type=str, default='/opt/ml/input/data/train/rating.csv')
-    parser.add_argument('--attr_dir', type=str, default='/opt/ml/input/data/train/writer.csv')
+    parser.add_argument('--rating_dir', type=str, default='./data/train/rating.csv')
+    parser.add_argument('--attr_dir', type=str, default='./data/train/director.csv')
     
     #model parameters
     parser.add_argument('--model', type=str, default='DeepFM', help='model type (default: DeepFM)')
-    parser.add_argument('--model_dir', type=str, default="/opt/ml/input/exp/expriment", help='model pth directory')
+    parser.add_argument('--model_dir', type=str, default="./exp/experiment7", help='model pth directory')
     parser.add_argument('--drop_ratio', type=float, default=0.1)
 
-    parser.add_argument('--output_dir', type=str, default="/opt/ml/input/output", help='output directory')
+    parser.add_argument('--output_dir', type=str, default="./output", help='output directory')
 
     args = parser.parse_args()
 
