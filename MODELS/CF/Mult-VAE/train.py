@@ -9,6 +9,7 @@ from dataset import *
 from dataloader import *
 from loss import *
 from model import *
+from utils import *
 
 # mlflow setting
 def mlflow_set():
@@ -66,7 +67,6 @@ def train(model, criterion, optimizer, is_VAE = False):
             start_time = time.time()
             train_loss = 0.0
 
-
 def evaluate(model, criterion, data_tr, data_te, is_VAE=False):
     # Turn on evaluation mode
     model.eval()
@@ -108,16 +108,6 @@ def evaluate(model, criterion, data_tr, data_te, is_VAE=False):
 
             # Exclude examples from training set
             recon_batch = recon_batch.cpu().numpy() # probability # valid userindex :26554 = id 14
-
-            ###############################
-            print("★"*80)
-            ff=recon_batch[0][data_tensor[0].cpu().detach().numpy().nonzero()]
-            for fff, f in enumerate(ff):
-                print(fff,f)
-
-            # exit()
-            # print('recon_batch',recon_batch)
-            ###############################
             recon_batch[data.nonzero()] = -np.inf
 
             n100 = NDCG_binary_at_k_batch(recon_batch, heldout_data, 100)
@@ -149,7 +139,7 @@ if __name__ == '__main__':
                         help='weight decay coefficient')
     parser.add_argument('--batch_size', type=int, default=500,
                         help='batch size')
-    parser.add_argument('--epochs', type=int, default=20,
+    parser.add_argument('--epochs', type=int, default=200,
                         help='upper epoch limit')
     parser.add_argument('--total_anneal_steps', type=int, default=200000,
                         help='the total number of gradient updates for annealing')
@@ -163,9 +153,15 @@ if __name__ == '__main__':
                         help='report interval')
     parser.add_argument('--save', type=str, default='model.pt',
                         help='path to save the final model')
+    parser.add_argument('--patience', type=str, default=10,
+                        help='Early Stopping에 들어갈 patience')
+    parser.add_argument('--checkpoint_path', type=str, default='/opt/ml/level2-movie-recommendation-level2-recsys-07/MODELS/CF/Mult-VAE/output/"',
+                        help='Early Stopping에 들어갈 patience')
+    parser.add_argument("--output_dir", default="/opt/ml/level2-movie-recommendation-level2-recsys-07/MODELS/CF/Mult-VAE/output/", type=str)
+
     args = parser.parse_args([])
 
-
+    args.checkpoint_path = os.path.join(args.output_dir, "Mult_VAE.pt")
     # Set the random seed manually for reproductibility.
     torch.manual_seed(args.seed)
 
@@ -306,7 +302,7 @@ if __name__ == '__main__':
 
     best_n100 = -np.inf
     update_count = 0
-
+    early_stopping = EarlyStopping(args.checkpoint_path, patience=args.patience, verbose=True)
     for epoch in range(1, args.epochs + 1):
         epoch_start_time = time.time()
         train(model, criterion, optimizer, is_VAE=True)
@@ -321,17 +317,24 @@ if __name__ == '__main__':
         n_iter = epoch * len(range(0, N, args.batch_size))
 
 
-        # Save the model if the n100 is the best we've seen so far.
-        if n100 > best_n100:
-            with open(args.save, 'wb') as f:
-                torch.save(model, f)
-            best_n100 = n100
+        # # Save the model if the n100 is the best we've seen so far.
+        # if n100 > best_n100:
+        #     with open(args.save, 'wb') as f:
+        #         torch.save(model, f)
+        #     best_n100 = n100
 
-
+        early_stopping(val_loss, model)
+        if early_stopping.early_stop:
+            print("Early stopping")
+            break
+    #     with open(args.save, 'wb') as f:
+    #         torch.save(torch.load(args.checkpoint_path), f)
+    #         # trainer.model.load_state_dict(torch.load(args.checkpoint_path))
+    #         # model.load_state_dict(torch.load('checkpoint.pt'))
 
     # Load the best saved model.
     with open(args.save, 'rb') as f:
-        model = torch.load(f)
+        model.load_state_dict(torch.load(args.checkpoint_path))
 
     # Run on test data.
     test_loss, n100, r20, r50 = evaluate(model, criterion, test_data_tr, test_data_te, is_VAE=True)
