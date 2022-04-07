@@ -47,3 +47,7 @@ version 0.1
 - args.nagative_num: neg sample 수
 - args.attr: 'genre', 'director' 등 str 타입
     
+## Concatenation 결과
+
+- Train Acc/Loss(20epoch) : 0.2748, 89.35%
+- Valid Acc/Loss(20epoch) : 1.9e-07, 89.31%

@@ -4,8 +4,8 @@ import torch.nn as nn
 class DeepFM(nn.Module):
     def __init__(self, args, input_dims, embedding_dim, mlp_dims):
         super(DeepFM, self).__init__()
-        total_input_dim = int(sum(input_dims)) # n_user + n_movie + n_genre
-
+        total_input_dim = int(sum(input_dims)) # n_user + n_movie + n_genre + n_writers
+        print (f"[DEBUG] model's total input dimension : {total_input_dim}")
         # Fm component의 constant bias term과 1차 bias term
         self.bias = nn.Parameter(torch.zeros((1,)))
         self.fc = nn.Embedding(total_input_dim, 1)

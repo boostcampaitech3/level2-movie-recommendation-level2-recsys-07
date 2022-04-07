@@ -106,17 +106,18 @@ def train(args):
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    # --dataset
+    #-- dataset
     rating_df = pd.read_csv(os.path.join(args.data_dir, 'rating.csv'))
 
-    attr_path = os.path.join(args.data_dir, (args.attr + '.csv'))
+    attr_path = os.path.join(args.data_dir, (args.attr_csv + '.csv'))
     attr_df = pd.read_csv(attr_path) 
 
     dataset_module = getattr(import_module("datasets"), args.dataset)
     dataset = dataset_module(args, rating_df, attr_df) # TODO
+    print (f"[DEBUG] DataSet has been loaded")
 
     # train_loader, valid_loader
-    valid_size = int( len(dataset) * args.val_ratio) # default val_ratio = 0.2
+    valid_size = int(len(dataset) * args.val_ratio) # default val_ratio = 0.2
     train_size = len(dataset) - valid_size
     
     train_dataset, valid_dataset = torch.utils.data.random_split(dataset,[train_size,valid_size])
@@ -138,14 +139,17 @@ def train(args):
         drop_last=True,
         # TODO : samplers
         )
+    print (f"[DEBUG] DataLoader has been loaded")
 
-    # --model
+    #-- model
     # for input dimention setting 
     n_users = dataset.get_users()
     n_items = dataset.get_items()
-    n_attributes = dataset.get_attributes()
+    n_attributes1 = dataset.get_attributes1()
+    n_attributes2 = dataset.get_attributes2()
+    print (f"[DEBUG] n_users = {n_users}, n_items = {n_items}, n_attributes1 = {n_attributes1}, n_attributes2 = {n_attributes2}")
 
-    input_dims = [n_users,n_items,n_attributes]
+    input_dims = [n_users,n_items,n_attributes1, n_attributes2]
     emb_dim = args.embedding_dim # default 10
 
     model_module = getattr(import_module("models"), args.model)
@@ -157,7 +161,8 @@ def train(args):
     ).to(device)
 
     model = torch.nn.DataParallel(model)
-
+    print (f"[DEBUG] Model has been loaded")
+    
     # --loss
     criterion = create_criterion(args.criterion)  # default: cross_entropy
     
@@ -168,6 +173,7 @@ def train(args):
         lr=args.lr,
         weight_decay=5e-4
     )
+    
     # --scheduler
     scheduler_module = getattr(import_module("torch.optim.lr_scheduler"), args.scheduler)
     scheduler = scheduler_module( #TODO : StepLR Setting -> Generalized Setting
@@ -184,120 +190,120 @@ def train(args):
     #-- Start Train
     print (f"[DEBUG] Start of TRAINING")
     #-- [MLflow] mlflow settings
-    mlflow_set(args)
-    with mlflow.start_run() as run:
-        mlflow_log_setting(args)
+    # mlflow_set(args)
+    # with mlflow.start_run() as run:
+    #     mlflow_log_setting(args)
         
-        model_uri = "runs:/{}/{}".format(run.info.run_id, args.model)
-        artifact_uri = mlflow.get_artifact_uri()
-        
-        for epoch in range(args.epochs):
-            model.train()
-            loss_value = 0
-            matches = 0
-            pbar = tqdm(enumerate(train_loader), total = len(train_loader))
+    #     model_uri = "runs:/{}/{}".format(run.info.run_id, args.model)
+    #     artifact_uri = mlflow.get_artifact_uri()
+    
+    for epoch in range(args.epochs):
+        model.train()
+        loss_value = 0
+        matches = 0
+        pbar = tqdm(enumerate(train_loader), total = len(train_loader))
 
-            # train loop
-            for idx, train_batch in pbar:
-                x, y = train_batch
+        # train loop
+        for idx, train_batch in pbar:
+            x, y = train_batch
+            x, y = x.to(device), y.to(device)
+
+            optimizer.zero_grad()
+            output = model(x)
+            result = torch.round(output)
+            loss = criterion(output, y.float())
+
+            loss.backward()
+            optimizer.step()
+
+            loss_value += loss.item()
+            matches += (result == y).sum().float()
+            # defrag cached memory
+            torch.cuda.empty_cache()
+
+
+            if(idx + 1) % 100 == 0:
+                train_loss = loss_value / 100
+                train_acc = matches / 100 / len(result)
+                current_lr = get_lr(optimizer)
+                pbar.set_postfix(
+                    {
+                        "Epoch" : f"[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)})",
+                        "loss" : f"{train_loss:4.4}",
+                        "accuracy" : f"{train_acc:4.2%}",
+                        "lr" : f"{current_lr}"
+                    }
+                )
+
+                #-- [MLflow] Set mlflow log metrics
+                #mlflow.log_metrics({
+                #     "Tarin/accuracy" : train_acc.item(),
+                #     "Train/loss" : train_loss,
+                # },step = (epoch * len(train_loader) + idx ))
+
+                loss_value = 0
+                matches = 0
+
+        scheduler.step()
+
+        # valid loop
+        with torch.no_grad():
+            print("Calculating validation results...")
+            model.eval()
+            val_loss = 0
+            val_matches = 0
+
+            for x, y in valid_loader:
                 x, y = x.to(device), y.to(device)
 
-                optimizer.zero_grad()
                 output = model(x)
                 result = torch.round(output)
                 loss = criterion(output, y.float())
-
-                loss.backward()
-                optimizer.step()
-
-                loss_value += loss.item()
-                matches += (result == y).sum().float()
-                # defrag cached memory
-                torch.cuda.empty_cache()
-
-
-                if(idx + 1) % 100 == 0:
-                    train_loss = loss_value / 100
-                    train_acc = matches / 100 / len(result)
-                    current_lr = get_lr(optimizer)
-                    pbar.set_postfix(
-                        {
-                            "Epoch" : f"[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)})",
-                            "loss" : f"{train_loss:4.4}",
-                            "accuracy" : f"{train_acc:4.2%}",
-                            "lr" : f"{current_lr}"
-                        }
-                    )
-
-                    #-- [MLflow] Set mlflow log metrics
-                    mlflow.log_metrics({
-                        "Tarin/accuracy" : train_acc.item(),
-                        "Train/loss" : train_loss,
-                    },step = (epoch * len(train_loader) + idx ))
-
-                    loss_value = 0
-                    matches = 0
-
-            scheduler.step()
-
-            # valid loop
-            with torch.no_grad():
-                print("Calculating validation results...")
-                model.eval()
-                val_loss = 0
-                val_matches = 0
-
-                for x, y in valid_loader:
-                    x, y = x.to(device), y.to(device)
-
-                    output = model(x)
-                    result = torch.round(output)
-                    loss = criterion(output, y.float())
-                        
-                    val_loss += loss.item()
-                    val_matches += (result == y).sum().float()
-
-                val_acc = val_matches/len(valid_dataset)
-                val_loss = val_loss/len(valid_dataset)
-                best_val_loss = min(best_val_loss, val_loss)
                     
                 val_loss += loss.item()
                 val_matches += (result == y).sum().float()
 
-            val_acc = val_matches / len(valid_dataset)
-            val_loss = val_loss / len(valid_dataset)
+            val_acc = val_matches/len(valid_dataset)
+            val_loss = val_loss/len(valid_dataset)
             best_val_loss = min(best_val_loss, val_loss)
                 
-            if val_acc > best_val_acc:
-                print(f"New best model for val accuracy : {val_acc:4.2%}! saving the best model..")
-                torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
-                best_val_acc = val_acc
-                stop_counter = 0
+            val_loss += loss.item()
+            val_matches += (result == y).sum().float()
 
-                #-- [MLflow] Save model artifacts to mlflow
-                # mlflow.log_model(model_uri, model)
-                # mlflow.log_artifacts(f"{save_dir}")
-                mlflow.log_artifact(f"{save_dir}/best.pth")
-                
-            else:
-                stop_counter += 1
-                print (f"!!! Early stop counter = {stop_counter}/{patience} !!!")
-            torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
+        val_acc = val_matches / len(valid_dataset)
+        val_loss = val_loss / len(valid_dataset)
+        best_val_loss = min(best_val_loss, val_loss)
             
-            print(
-                f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || "
-                f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2}"
-            )
+        if val_acc > best_val_acc:
+            print(f"New best model for val accuracy : {val_acc:4.2%}! saving the best model..")
+            torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
+            best_val_acc = val_acc
+            stop_counter = 0
 
-            #-- [MLflow] mlflow valid metrics logging
-            mlflow.log_metrics({
-                "Valid/accuracy" : val_acc.item(),
-                "Valid/loss" : val_loss,
-            },step = epoch) 
+            #-- [MLflow] Save model artifacts to mlflow
+            # mlflow.log_model(model_uri, model)
+            # mlflow.log_artifacts(f"{save_dir}")
+            # mlflow.log_artifact(f"{save_dir}/best.pth")
+            
+        else:
+            stop_counter += 1
+            print (f"!!! Early stop counter = {stop_counter}/{patience} !!!")
+        torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
+        
+        print(
+            f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || "
+            f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2}"
+        )
 
-            if stop_counter >= patience:
-                print("Early stopping")
-                break
+        #-- [MLflow] mlflow valid metrics logging
+        # mlflow.log_metrics({
+        #     "Valid/accuracy" : val_acc.item(),
+        #     "Valid/loss" : val_loss,
+        # },step = epoch) 
+
+        if stop_counter >= patience:
+            print("Early stopping")
+            break
 
 if __name__ == '__main__':
 
@@ -334,7 +340,7 @@ if __name__ == '__main__':
 
     if args.config == True:
         print("Using config.yaml option")
-        with open('/opt/ml/input/level2-movie-recommendation-level2-recsys-07/MODELS/DeepFM/config.yml') as f: #set config.yml path
+        with open('./config.yml') as f: #set config.yml path
             config = yaml.safe_load(f)
         args = dotdict(config)
         
