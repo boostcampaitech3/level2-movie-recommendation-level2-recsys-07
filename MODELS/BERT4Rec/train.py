@@ -105,39 +105,69 @@ def train(args):
         loss_avg = loss_sum / len(train_loader)
         # print (f"Epoch: {epoch}, loss average: {loss_avg: .5f}")
         scheduler.step()
-      
-    #-- validation
-    model.eval()
-    NDCG    = 0.0 # NDCG@10
-    HIT     = 0.0 # HIT@10
-    RECALL  = 0.0 # Recall@10
+        #-- validataion
+        
+        model.eval()
+        valid_loss = 0
+        masked_cnt = 0
+        correct_cnt = 0
+        for log_seqs, labels in valid_loader:
 
-    num_item_sample = 100
-    num_user_sample = 1000 # validation with 1000 users
-    users = np.random.randint(0, num_user, num_user_sample)
-    
-    user_train = dataset.user_train
-    user_valid = dataset.user_valid
-    
-    for u in tqdm(users):
-        seq = (user_train[u] + [num_item + 1])[-args.max_seq_len:]
-        user_seen = set(user_train[u] + user_valid[u])
-        item_idx = np.array([user_valid[u][0]] + [random_neg(1, num_item + 1, user_seen) for _ in range(num_item_sample)])
+            logits = model(log_seqs)
+
+            y_hat = logits[:,:].argsort()[:,:,-1]
+
+            # size matching
+            logits = logits.view(-1, logits.size(-1))   # [6400, 6808]
+            labels = labels.view(-1).to(device)         # 6400
+
+            loss = criterion(logits, labels)
+            
+            labels = labels.cpu()
+            y_hat = y_hat.view(-1).cpu()
+            correct_cnt += torch.sum((labels == y_hat) & (labels != 0))
+            masked_cnt += labels.count_nonzero()
+            valid_loss += loss
+
+            torch.cuda.empty_cache()
         
-        with torch.no_grad():
-            predictions = - model(np.array([seq]))      # [batch_size x tokens x (num_item + 1)]
-            predictions = predictions[0][-1][item_idx]  # sampling
-            
-            # top10_items = predictions.argsort()[:10]
-            # top10_items = item_idx[top10_items.cpu().numpy()]
-            
-            rank = predictions.argsort().argsort()[0].item() # 0번째 아이템은 상위 몇번째?
+        valid_loss_avg = valid_loss / len(valid_loader)
+        valid_acc = correct_cnt / masked_cnt
+        print (f"Epoch: {epoch}, valid_acc : {valid_acc: .5f}")
         
-        if rank < 10: # @10
-            NDCG += 1 / np.log2(rank + 2)
-            HIT += 1
+
+    #-- validation
+    # model.eval()
+    # NDCG    = 0.0 # NDCG@10
+    # HIT     = 0.0 # HIT@10
+    # RECALL  = 0.0 # Recall@10
+
+    # num_item_sample = 100
+    # num_user_sample = 1000 # validation with 1000 users
+    # users = np.random.randint(0, num_user, num_user_sample)
+    
+    # user_train = dataset.user_train
+    # user_valid = dataset.user_valid
+    
+    # for u in tqdm(users):
+    #     seq = (user_train[u] + [num_item + 1])[-args.max_seq_len:]
+    #     user_seen = set(user_train[u] + user_valid[u])
+    #     item_idx = np.array([user_valid[u][0]] + [random_neg(1, num_item + 1, user_seen) for _ in range(num_item_sample)])
+        
+    #     with torch.no_grad():
+    #         predictions = - model(np.array([seq]))      # [batch_size x tokens x (num_item + 1)]
+    #         predictions = predictions[0][-1][item_idx]  # sampling
             
-    print(f'NDCG@10: {NDCG / num_user_sample}| HIT@10: {HIT / num_user_sample}')
+    #         # top10_items = predictions.argsort()[:10]
+    #         # top10_items = item_idx[top10_items.cpu().numpy()]
+            
+    #         rank = predictions.argsort().argsort()[0].item() # 0번째 아이템은 상위 몇번째?
+        
+    #     if rank < 10: # @10
+    #         NDCG += 1 / np.log2(rank + 2)
+    #         HIT += 1
+            
+    # print(f'NDCG@10: {NDCG / num_user_sample}| HIT@10: {HIT / num_user_sample}')
 
 if __name__ == '__main__':
 
