@@ -55,8 +55,8 @@ def train(args):
     print (f"[DEBUG] DataLoader has been loaded")
 
     #-- model
-    num_user = dataset.num_user
-    num_item = dataset.num_item
+    num_user = train_dataset.num_user
+    num_item = train_dataset.num_item
     model = BERT4Rec(num_user, num_item, args.hidden_units, args.num_heads, args.num_layer, args.max_seq_len, args.dropout_rate, device).to(device)
     
     #-- loss

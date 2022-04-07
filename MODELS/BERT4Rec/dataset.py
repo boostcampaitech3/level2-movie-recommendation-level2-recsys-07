@@ -2,15 +2,15 @@ import numpy as np
 import torch
 
 from torch.utils.data import Dataset
-from preprocess import preprocess_original, preprocess2_leave_one_out
+from preprocess import preprocess
 
 class SeqDataset(Dataset):
     def __init__(self, args, option="split_by_user"):
         
         if option == 'split_by_user': # [:-1] : train or valid
-            num_user, num_item, train_rating_df, user_train, user_valid = preprocess_original(args, option)
+            num_user, num_item, train_rating_df, user_train, user_valid = preprocess(args, option)
         elif option == 'leave_one_out': # [:-2] : train
-            num_user, num_item, train_rating_df, user_train, user_valid = preprocess2_leave_one_out(args, option)
+            num_user, num_item, train_rating_df, user_train, user_valid = preprocess(args, option)
         
         self.num_user        = num_user          # 31360
         self.num_item        = num_item          # 6807

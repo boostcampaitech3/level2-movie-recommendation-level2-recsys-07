@@ -6,7 +6,7 @@ from collections import defaultdict
 from pyparsing import col
 from tqdm import tqdm
 
-def preprocess_original(args):
+def preprocess(args, option):
     
     print ("[INFO] Pre-process train_ratings.csv (re-indexing)")
     
@@ -58,9 +58,9 @@ def preprocess_original(args):
     user_valid = {}
     
     last_idx = None
-    if args.data_split == "leave_one_out":
+    if option == "leave_one_out":
         last_idx = -2
-    elif args.data_split == "split_by_user":
+    elif option == "split_by_user":
         last_idx = -1
     
     for user in user_seen_dict:
