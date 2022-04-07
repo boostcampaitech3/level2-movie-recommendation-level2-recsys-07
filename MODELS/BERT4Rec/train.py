@@ -38,6 +38,7 @@ def train(args):
     elif args.data_split == "leave_one_out":
         train_dataset = SeqDataset(args, option="leave_one_out") # train_input[:-2]
         valid_dataset = SeqDataset(args, option="split_by_user") # train_input[:-1]
+        dataset = train_dataset #added to get num_item, num_user
         
     print (f"[DEBUG] DataSet has been loaded")
 
@@ -55,8 +56,8 @@ def train(args):
     print (f"[DEBUG] DataLoader has been loaded")
 
     #-- model
-    num_user = train_dataset.num_user
-    num_item = train_dataset.num_item
+    num_user = dataset.num_user
+    num_item = dataset.num_item
     model = BERT4Rec(num_user, num_item, args.hidden_units, args.num_heads, args.num_layer, args.max_seq_len, args.dropout_rate, device).to(device)
     
     #-- loss
@@ -106,34 +107,32 @@ def train(args):
         # print (f"Epoch: {epoch}, loss average: {loss_avg: .5f}")
         scheduler.step()
         #-- validataion
-        
-        model.eval()
-        valid_loss = 0
-        masked_cnt = 0
-        correct_cnt = 0
-        for log_seqs, labels in valid_loader:
+        torch.cuda.empty_cache()
+        with torch.no_grad():
+            model.eval()
+            valid_loss = 0
+            masked_cnt = 0
+            correct_cnt = 0
 
-            logits = model(log_seqs)
+            for _log_seqs, _labels in valid_loader:
 
-            y_hat = logits[:,:].argsort()[:,:,-1]
+                _logits = model(_log_seqs)
 
-            # size matching
-            logits = logits.view(-1, logits.size(-1))   # [6400, 6808]
-            labels = labels.view(-1).to(device)         # 6400
+                y_hat = _logits[:,:].argsort()[:,:,-1].view(-1)
 
-            loss = criterion(logits, labels)
+                # size matching
+                _logits = _logits.view(-1, _logits.size(-1))   # [6400, 6808]
+                _labels = _labels.view(-1).to(device)         # 6400
+
+                _loss = criterion(_logits, _labels)
+                
+                correct_cnt += torch.sum((_labels == y_hat) & (_labels != 0))
+                masked_cnt += _labels.count_nonzero()
+                valid_loss += _loss
             
-            labels = labels.cpu()
-            y_hat = y_hat.view(-1).cpu()
-            correct_cnt += torch.sum((labels == y_hat) & (labels != 0))
-            masked_cnt += labels.count_nonzero()
-            valid_loss += loss
-
-            torch.cuda.empty_cache()
-        
-        valid_loss_avg = valid_loss / len(valid_loader)
-        valid_acc = correct_cnt / masked_cnt
-        print (f"Epoch: {epoch}, valid_acc : {valid_acc: .5f}")
+            valid_loss_avg = valid_loss / len(valid_loader)
+            valid_acc = correct_cnt / masked_cnt
+            print (f"Epoch: {epoch}, valid_acc : {valid_acc: 4.2%}, valid_loss_avg :{valid_loss_avg: .5f}")
         
 
     #-- validation
@@ -176,7 +175,7 @@ if __name__ == '__main__':
     #-- DataSet Arguments
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--train_rating_path', type=str, default="./data/train_ratings.csv")
-    parser.add_argument('--data_split', type=str, default="leave_one_out")
+    parser.add_argument('--data_split', type=str, default="split_by_user")
 
     
     #-- DataLoader Arguments
