@@ -181,13 +181,16 @@ def train(args):
     best_val_acc = 0
     best_val_loss = np.inf
 
-    #Start Train
+    #-- Start Train
+    print (f"[DEBUG] Start of TRAINING")
+    #-- [MLflow] mlflow settings
     mlflow_set(args)
     with mlflow.start_run() as run:
         mlflow_log_setting(args)
         
         model_uri = "runs:/{}/{}".format(run.info.run_id, args.model)
         artifact_uri = mlflow.get_artifact_uri()
+        
         for epoch in range(args.epochs):
             model.train()
             loss_value = 0
@@ -226,6 +229,7 @@ def train(args):
                         }
                     )
 
+                    #-- [MLflow] Set mlflow log metrics
                     mlflow.log_metrics({
                         "Tarin/accuracy" : train_acc.item(),
                         "Train/loss" : train_loss,
@@ -270,13 +274,14 @@ def train(args):
                 best_val_acc = val_acc
                 stop_counter = 0
 
-                
-                #mlflow.log_model(model_uri, model)
-                #mlflow.log_artifacts(f"{save_dir}")
+                #-- [MLflow] Save model artifacts to mlflow
+                # mlflow.log_model(model_uri, model)
+                # mlflow.log_artifacts(f"{save_dir}")
                 mlflow.log_artifact(f"{save_dir}/best.pth")
+                
             else:
                 stop_counter += 1
-                print(f"!!! Early stop counter = {stop_counter}/{patience} !!!")
+                print (f"!!! Early stop counter = {stop_counter}/{patience} !!!")
             torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
             
             print(
@@ -284,7 +289,7 @@ def train(args):
                 f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2}"
             )
 
-            #mlflow valid metrics logging
+            #-- [MLflow] mlflow valid metrics logging
             mlflow.log_metrics({
                 "Valid/accuracy" : val_acc.item(),
                 "Valid/loss" : val_loss,
@@ -324,12 +329,12 @@ if __name__ == '__main__':
     parser.add_argument('--data_dir', type=str ,default= '/opt/ml/input/data/train/', help='attribute data directory')
     
     # mlflow tracking option
-    parser.add_argument('--tracking_server', type=str ,default= 'http://35.197.48.164:5000/', help='tracking server')
+    parser.add_argument('--tracking_server', type=str ,default= "http://34.105.0.176:5000/", help='tracking server')
     args = parser.parse_args()
 
     if args.config == True:
         print("Using config.yaml option")
-        with open('./config.yml') as f: #set config.yml path
+        with open('/opt/ml/input/level2-movie-recommendation-level2-recsys-07/MODELS/DeepFM/config.yml') as f: #set config.yml path
             config = yaml.safe_load(f)
         args = dotdict(config)
         

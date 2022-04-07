@@ -39,9 +39,15 @@ class RatingDataset(Dataset):
         self.args = args
         self.rating_df = neg_sample(rating_df, self.args.negative_num) # args.negative num
         self.attr_df = attr_df
-        self.data = join_attribute(self.rating_df, self.attr_df, self.args.attr) # args.attr
-        self.X, self.y = feature_matrix(self.data, self.args.attr) # args.attr
-
+        
+        # self.data = ["user", "item", "rating", "genre", "writer"]
+        #self.data = join_attribute(self.rating_df, self.attr_df) # args.attr
+        self.data = pd.read_csv('data/train/joined_rating_df.csv')
+        self.X, self.y = feature_matrix(data=self.data, attr=["genre", "writer"]) # args.attr
+        
+        self.train_df = pd.read_csv("./data/train/rating.csv")
+        self.genre_writer_df = pd.read_csv("./data/train/genre_writer.csv")
+        
     def __getitem__(self, index):
         return self.X[index], self.y[index]
 
