@@ -6,11 +6,12 @@ from torch.utils.data import DataLoader
 
 import os
 import argparse
+import yaml
 
 import numpy as np
 
 from tqdm import tqdm
-from utils import fix_random_seed, increment_path, random_neg
+from utils import fix_random_seed, increment_path, random_neg, dotdict
 from dataset import SeqDataset
 from model import BERT4Rec
 
@@ -106,6 +107,7 @@ def train(args):
         loss_avg = loss_sum / len(train_loader)
         # print (f"Epoch: {epoch}, loss average: {loss_avg: .5f}")
         scheduler.step()
+
         #-- validataion
         torch.cuda.empty_cache()
         with torch.no_grad():
@@ -121,8 +123,8 @@ def train(args):
                 y_hat = _logits[:,:].argsort()[:,:,-1].view(-1)
 
                 # size matching
-                _logits = _logits.view(-1, _logits.size(-1))   # [6400, 6808]
-                _labels = _labels.view(-1).to(device)         # 6400
+                _logits = _logits.view(-1, _logits.size(-1))   # [51200, 6808]
+                _labels = _labels.view(-1).to(device)         # 51200
 
                 _loss = criterion(_logits, _labels)
                 
@@ -172,6 +174,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     
+    # config option
+    parser.add_argument('--config', type=bool, default=True, help = 'using config using option')
+
     #-- DataSet Arguments
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--train_rating_path', type=str, default="./data/train_ratings.csv")
@@ -202,8 +207,15 @@ if __name__ == '__main__':
     #-- Experiment Arguments
     parser.add_argument('--name', type=str, default='experiment', help='model save at ./exp/{name}')
     
-    
     args = parser.parse_args()
 
+    #-- load config.yaml
+    if args.config == True:
+        print("Using config.yaml option")
+        with open('./config.yaml') as f: #set config.yml path
+            config = yaml.safe_load(f)
+        args = dotdict(config)
+
     print(args)
+
     train(args)
