@@ -2,11 +2,15 @@ import numpy as np
 import torch
 
 from torch.utils.data import Dataset
-from preprocess import preprocess
+from preprocess import preprocess_original, preprocess2_leave_one_out
 
 class SeqDataset(Dataset):
-    def __init__(self, args):
-        num_user, num_item, train_rating_df, user_train, user_valid = preprocess(args)
+    def __init__(self, args, option="split_by_user"):
+        
+        if option == 'split_by_user': # [:-1] : train or valid
+            num_user, num_item, train_rating_df, user_train, user_valid = preprocess_original(args, option)
+        elif option == 'leave_one_out': # [:-2] : train
+            num_user, num_item, train_rating_df, user_train, user_valid = preprocess2_leave_one_out(args, option)
         
         self.num_user        = num_user          # 31360
         self.num_item        = num_item          # 6807
@@ -18,7 +22,7 @@ class SeqDataset(Dataset):
 
 
     def __len__(self):
-        return self.num_user                # 31360
+        return self.num_user                     # 31360
 
 
     def __getitem__(self, user):
@@ -31,6 +35,7 @@ class SeqDataset(Dataset):
             prob = np.random.random()
             
             #-- Do masking
+            # MASK -> num_item + 1, negative sample, postivie sample
             if prob < self.mask_prob:
                 prob /= self.mask_prob
 
@@ -59,3 +64,4 @@ class SeqDataset(Dataset):
         # X: user's watch history without last movie [masked + random sampled(neg, pos)]
         # y: user's watch history without last movie
         return torch.LongTensor(tokens), torch.LongTensor(labels)
+    

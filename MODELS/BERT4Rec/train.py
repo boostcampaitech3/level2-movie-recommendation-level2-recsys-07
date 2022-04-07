@@ -28,10 +28,17 @@ def train(args):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     #-- DataSet
-    dataset = SeqDataset(args)
-    valid_size = int(len(dataset) * args.val_ratio) # default val_ratio = 0.2
-    train_size = len(dataset) - valid_size
-    train_dataset, valid_dataset = torch.utils.data.random_split(dataset,[train_size,valid_size])
+    train_dataset = None
+    valid_dataset = None
+    if args.data_split == "split_by_user":
+        dataset = SeqDataset(args) # train_input[:-1]
+        valid_size = int(len(dataset) * args.val_ratio) # default val_ratio = 0.2
+        train_size = len(dataset) - valid_size
+        train_dataset, valid_dataset = torch.utils.data.random_split(dataset,[train_size,valid_size])
+    elif args.data_split == "leave_one_out":
+        train_dataset = SeqDataset(args, option="leave_one_out") # train_input[:-2]
+        valid_dataset = SeqDataset(args, option="split_by_user") # train_input[:-1]
+        
     print (f"[DEBUG] DataSet has been loaded")
 
     #-- DataLoader: train_loader, valid_loader
@@ -84,8 +91,8 @@ def train(args):
             logits = model(log_seqs)
             
             # size matching
-            logits = logits.view(-1, logits.size(-1))   # [6400, 6808]
-            labels = labels.view(-1).to(device)         # 6400
+            logits = logits.view(-1, logits.size(-1))   # [51200, 6808]
+            labels = labels.view(-1).to(device)         # 51200
             
             optimizer.zero_grad()
             loss = criterion(logits, labels)
@@ -121,8 +128,8 @@ def train(args):
             predictions = - model(np.array([seq]))      # [batch_size x tokens x (num_item + 1)]
             predictions = predictions[0][-1][item_idx]  # sampling
             
-            top10_items = predictions.argsort()[:10]
-            top10_items = item_idx[top10_items.cpu().numpy()]
+            # top10_items = predictions.argsort()[:10]
+            # top10_items = item_idx[top10_items.cpu().numpy()]
             
             rank = predictions.argsort().argsort()[0].item() # 0번째 아이템은 상위 몇번째?
         
@@ -139,6 +146,8 @@ if __name__ == '__main__':
     #-- DataSet Arguments
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--train_rating_path', type=str, default="./data/train_ratings.csv")
+    parser.add_argument('--data_split', type=str, default="leave_one_out")
+
     
     #-- DataLoader Arguments
     parser.add_argument('--batch_size', type=int, default=1024, help='number of batch size in each epoch (default: 1024)')
