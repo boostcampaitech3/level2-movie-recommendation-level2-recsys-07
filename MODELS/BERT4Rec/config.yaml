@@ -1,0 +1,19 @@
+#Bert4Rec config.yml
+val_ratio : 0.2
+train_rating_path : "./data/train_ratings.csv"
+data_split : "split_by_user" #leave_one_out
+batch_size : 1024
+seed : 42
+epochs : 100
+lr_decay_step : 30
+patience : 10
+lr : 1.0e-3
+eta_min : 1.0e-4
+tmax : 200
+dropout_rate : 0.1
+max_seq_len : 50
+mask_prob: 0.15
+hidden_units: 60
+num_heads: 1
+num_layer: 2
+name: "experiment"
