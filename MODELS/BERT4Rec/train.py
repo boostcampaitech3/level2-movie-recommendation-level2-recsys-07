@@ -54,12 +54,12 @@ def train(args):
 
     #-- DataLoader: train_loader, valid_loader
     train_loader = DataLoader(train_dataset,
-        batch_size  = args.batch_size, #default batch_size = 1024 # 배치는 유저다
+        batch_size  = args.train_batch_size, #default batch_size = 1024 # 배치는 유저다
         shuffle     = True,
         pin_memory  = use_cuda
     )
     valid_loader = DataLoader(valid_dataset, 
-        batch_size  = args.batch_size, #default batch_size = 1024
+        batch_size  = args.valid_batch_size, #default batch_size = 1024
         shuffle     = True,
         pin_memory  = use_cuda
     )
@@ -201,7 +201,8 @@ if __name__ == '__main__':
     parser.add_argument('--data_split', type=str, default="split_by_user")
     
     #-- DataLoader Arguments
-    parser.add_argument('--batch_size', type=int, default=1024, help='number of batch size in each epoch (default: 1024)')
+    parser.add_argument('--train_batch_size', type=int, default=64, help='number of train batch size in each epoch (default: 64)')
+    parser.add_argument('--valid_batch_size', type=int, default=1024, help='number of valid batch size in each epoch (default: 1024)')
     
     #-- Trainer Arguments
     parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')
