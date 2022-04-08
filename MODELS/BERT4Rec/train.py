@@ -159,6 +159,7 @@ def train(args):
                     print(f"New best model for val loss : {valid_loss_avg:.5f}! saving the best model..")
                     torch.save(model, f"{save_dir}/best.pth")
                     best_val_loss = valid_loss_avg
+                    best_val_acc = valid_acc
                     stop_counter = 0
 
                     #-- [MLflow] Save model artifacts to mlflow
