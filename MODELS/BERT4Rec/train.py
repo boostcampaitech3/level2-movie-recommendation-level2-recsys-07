@@ -17,6 +17,9 @@ from model import BERT4Rec
 
 import mlflow
 
+EXPRIMENT_NAME = "Bert4Rec"
+TRACKiNG_URI = "http://34.105.0.176:5000/"
+
 def train(args):
     
     #-- Fix random seed
@@ -28,7 +31,7 @@ def train(args):
     
     #-- Save current param
     with open(os.path.join(save_dir, 'config.yaml'), 'w') as yaml_file:
-        yaml.dump(vars(args), yaml_file, default_flow_style=False)
+        yaml.dump(dict(args), yaml_file, default_flow_style=False)
 
     #-- Use CUDA if available
     use_cuda = torch.cuda.is_available()
@@ -88,11 +91,12 @@ def train(args):
     
     
         
-    mlflow.set_tracking_uri("http://34.105.0.176:5000/")
-    mlflow.set_experiment("Bert4Rec")
+    mlflow.set_tracking_uri(TRACKiNG_URI)
+    mlflow.set_experiment(EXPRIMENT_NAME)
     #-- mlflow setting
     with mlflow.start_run() as run:
-        mlflow.log_params(vars(args))
+        mlflow.log_params(vars(args))                  # save params
+        mlflow.log_artifact(f"{save_dir}/config.yaml") # config.yaml save
         #-- Start Train
         print (f"[DEBUG] Start of TRAINING")
     
@@ -122,7 +126,6 @@ def train(args):
 
             #-- [MLflow] Set mlflow log metrics
             mlflow.log_metrics({
-                #"Tarin/accuracy" : train_acc.item(),
                 "Train/loss_average" : loss_avg.item(),
             },step = epoch)
 
@@ -154,17 +157,17 @@ def train(args):
                 valid_acc = correct_cnt / masked_cnt
                 if valid_loss_avg < best_val_loss:
                     print(f"New best model for val loss : {valid_loss_avg:.5f}! saving the best model..")
-                    torch.save(model.state_dict(), f"{save_dir}/best.pth")
+                    torch.save(model, f"{save_dir}/best.pth")
                     best_val_loss = valid_loss_avg
                     stop_counter = 0
 
                     #-- [MLflow] Save model artifacts to mlflow
-                    # mlflow.log_artifact(f"{save_dir}/best.pth")
+                    mlflow.log_artifact(f"{save_dir}/best.pth")
                     
                 else:
                     stop_counter += 1
                     print (f"!!! Early stop counter = {stop_counter}/{patience} !!!")
-                torch.save(model.state_dict(), f"{save_dir}/last.pth")
+                torch.save(model, f"{save_dir}/last.pth")
                 
                 print(
                     f"[Val] acc : {valid_acc:4.2%}, loss: {valid_loss_avg:.5f} || "
@@ -182,7 +185,9 @@ def train(args):
                 if stop_counter >= patience:
                     print("Early stopping")
                     break
-
+        #-- [MLflow] save last model artifacts to mlflow
+        mlflow.log_artifact(f"{save_dir}/last.pth")
+    
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
