@@ -1,7 +1,6 @@
 import torch
-
+import pandas as pd
 import numpy as np
-
 import random
 import glob
 import re
@@ -47,3 +46,18 @@ class dotdict(dict):
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+def make_new_user_movie_interaction():
+    print("new_user_movie_interaction.csv 만들기 시작")
+    raw_data = pd.read_csv("/opt/ml/input/data/train/train_ratings.csv", header = 0)
+    raw_data["time"] = 1
+    unique_sid = pd.unique(raw_data['item'])
+    show2id = dict((sid, i) for (i, sid) in enumerate(unique_sid))
+
+    for i in range(len(raw_data["item"])) :
+        raw_data["item"].iloc[i] = show2id[raw_data["item"].iloc[i]]
+        if i%100000 == 0 :
+            print(f"{i} complete")
+    
+    user_movie_df = raw_data.pivot_table("time","user","item").fillna(0)
+    user_movie_df.to_csv("./data/new_user_movie_interaction.csv")
