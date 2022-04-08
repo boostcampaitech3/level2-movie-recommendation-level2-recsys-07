@@ -36,7 +36,7 @@ def train(args):
 
     #-- DataLoader: train_loader, valid_loader
     train_loader = DataLoader(train_dataset,
-        batch_size  = args.batch_size, #default batch_size = 1024
+        batch_size  = args.batch_size, #default batch_size = 1024 # 배치는 유저다
         shuffle     = True,
         pin_memory  = use_cuda
     )
@@ -53,7 +53,7 @@ def train(args):
     model = BERT4Rec(num_user, num_item, args.hidden_units, args.num_heads, args.num_layer, args.max_seq_len, args.dropout_rate, device).to(device)
     
     #-- loss
-    criterion = nn.CrossEntropyLoss(ignore_index=0)  # default: cross_entropy
+    criterion = nn.CrossEntropyLoss(ignore_index=0)  # default: cross_entropy # mask 안한 거 빼고 함
     
     #-- optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -80,12 +80,12 @@ def train(args):
         
         tqdm_bar = tqdm(train_loader)
         
-        for idx, (log_seqs, labels) in enumerate(tqdm_bar):
+        for idx, (log_seqs, labels) in enumerate(tqdm_bar): # (log_seqs, labels) : user당
             logits = model(log_seqs)
             
             # size matching
-            logits = logits.view(-1, logits.size(-1))   # [6400, 6808]
-            labels = labels.view(-1).to(device)         # 6400
+            logits = logits.view(-1, logits.size(-1))   # [51200, 6808] # 학습된 결과
+            labels = labels.view(-1).to(device)         # 1024(user) * 50 = 51200 *1
             
             optimizer.zero_grad()
             loss = criterion(logits, labels)
@@ -112,20 +112,20 @@ def train(args):
     user_train = dataset.user_train
     user_valid = dataset.user_valid
     
-    for u in tqdm(users):
-        seq = (user_train[u] + [num_item + 1])[-args.max_seq_len:]
+    for u in tqdm(users): # 유저별로 31360번 돈다
+        seq = (user_train[u] + [num_item + 1])[-args.max_seq_len:] # zero padding 포함
         user_seen = set(user_train[u] + user_valid[u])
-        item_idx = np.array([user_valid[u][0]] + [random_neg(1, num_item + 1, user_seen) for _ in range(num_item_sample)])
+        item_idx = np.array([user_valid[u][0]] + [random_neg(1, num_item + 1, user_seen) for _ in range(num_item_sample)]) #101개
         
-        with torch.no_grad():
-            predictions = - model(np.array([seq]))      # [batch_size x tokens x (num_item + 1)]
+        with torch.no_grad(): # 한 명당 다음 item 예측
+            predictions = - model(np.array([seq]))      # [batch_size x tokens x (num_item + 1)] # model out
             predictions = predictions[0][-1][item_idx]  # sampling
             
-            top10_items = predictions.argsort()[:10]
-            top10_items = item_idx[top10_items.cpu().numpy()]
+            # top10_items = predictions.argsort()[:10]
+            # top10_items = item_idx[top10_items.cpu().numpy()]
             
             rank = predictions.argsort().argsort()[0].item() # 0번째 아이템은 상위 몇번째?
-        
+         
         if rank < 10: # @10
             NDCG += 1 / np.log2(rank + 2)
             HIT += 1
@@ -138,7 +138,8 @@ if __name__ == '__main__':
     
     #-- DataSet Arguments
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
-    parser.add_argument('--train_rating_path', type=str, default="./data/train_ratings.csv")
+    # parser.add_argument('--train_rating_path', type=str, default="./data/train_ratings.csv")
+    parser.add_argument('--train_rating_path', type=str, default="/opt/ml/input/data/train/train_ratings.csv")
     
     #-- DataLoader Arguments
     parser.add_argument('--batch_size', type=int, default=1024, help='number of batch size in each epoch (default: 1024)')
