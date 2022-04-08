@@ -15,6 +15,8 @@ from utils import fix_random_seed, increment_path, random_neg, dotdict
 from dataset import SeqDataset
 from model import BERT4Rec
 
+import mlflow
+
 def train(args):
     
     #-- Fix random seed
@@ -24,6 +26,10 @@ def train(args):
     save_dir = increment_path(os.path.join('./exp/', args.name))
     os.makedirs(save_dir)
     
+    #-- Save current param
+    with open(os.path.join(save_dir, 'config.yaml'), 'w') as yaml_file:
+        yaml.dump(vars(args), yaml_file, default_flow_style=False)
+
     #-- Use CUDA if available
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -80,95 +86,102 @@ def train(args):
     best_val_acc    = 0
     best_val_loss   = np.inf
     
-    #-- Start Train
-    print (f"[DEBUG] Start of TRAINING")
     
-    for epoch in range(args.epochs):
-        model.train()
-        loss_sum = 0
         
-        tqdm_bar = tqdm(train_loader)
-        
-        for idx, (log_seqs, labels) in enumerate(tqdm_bar):
-            logits = model(log_seqs)
+    mlflow.set_tracking_uri("http://34.105.0.176:5000/")
+    mlflow.set_experiment("Bert4Rec")
+    #-- mlflow setting
+    with mlflow.start_run() as run:
+        mlflow.log_params(vars(args))
+        #-- Start Train
+        print (f"[DEBUG] Start of TRAINING")
+    
+        for epoch in range(args.epochs):
+            model.train()
+            loss_sum = 0
             
-            # size matching
-            logits = logits.view(-1, logits.size(-1))   # [51200, 6808]
-            labels = labels.view(-1).to(device)         # 51200
+            tqdm_bar = tqdm(train_loader)
             
-            optimizer.zero_grad()
-            loss = criterion(logits, labels)
-            loss_sum += loss
-            loss.backward()
-            optimizer.step()
-            
-            tqdm_bar.set_description(f'Epoch: {epoch + 1:3d}| Step: {idx:3d}| Train loss: {loss:.5f}')
-        
-        loss_avg = loss_sum / len(train_loader)
-        # print (f"Epoch: {epoch}, loss average: {loss_avg: .5f}")
-        scheduler.step()
-
-        #-- validataion
-        torch.cuda.empty_cache()
-        with torch.no_grad():
-            model.eval()
-            valid_loss = 0
-            masked_cnt = 0
-            correct_cnt = 0
-
-            for _log_seqs, _labels in valid_loader:
-
-                _logits = model(_log_seqs)
-
-                y_hat = _logits[:,:].argsort()[:,:,-1].view(-1)
-
-                # size matching
-                _logits = _logits.view(-1, _logits.size(-1))   # [51200, 6808]
-                _labels = _labels.view(-1).to(device)         # 51200
-
-                _loss = criterion(_logits, _labels)
+            for idx, (log_seqs, labels) in enumerate(tqdm_bar):
+                logits = model(log_seqs)
                 
-                correct_cnt += torch.sum((_labels == y_hat) & (_labels != 0))
-                masked_cnt += _labels.count_nonzero()
-                valid_loss += _loss
+                # size matching
+                logits = logits.view(-1, logits.size(-1))   # [51200, 6808]
+                labels = labels.view(-1).to(device)         # 51200
+                
+                optimizer.zero_grad()
+                loss = criterion(logits, labels)
+                loss_sum += loss
+                loss.backward()
+                optimizer.step()
+                
+                tqdm_bar.set_description(f'Epoch: {epoch + 1:3d}| Step: {idx:3d}| Train loss: {loss:.5f}')
             
-            valid_loss_avg = valid_loss / len(valid_loader)
-            valid_acc = correct_cnt / masked_cnt
-            print (f"Epoch: {epoch}, valid_acc : {valid_acc: 4.2%}, valid_loss_avg :{valid_loss_avg: .5f}")
-        
+            loss_avg = loss_sum / len(train_loader)
+            scheduler.step()
 
-    #-- validation
-    # model.eval()
-    # NDCG    = 0.0 # NDCG@10
-    # HIT     = 0.0 # HIT@10
-    # RECALL  = 0.0 # Recall@10
+            #-- [MLflow] Set mlflow log metrics
+            mlflow.log_metrics({
+                #"Tarin/accuracy" : train_acc.item(),
+                "Train/loss_average" : loss_avg.item(),
+            },step = epoch)
 
-    # num_item_sample = 100
-    # num_user_sample = 1000 # validation with 1000 users
-    # users = np.random.randint(0, num_user, num_user_sample)
-    
-    # user_train = dataset.user_train
-    # user_valid = dataset.user_valid
-    
-    # for u in tqdm(users):
-    #     seq = (user_train[u] + [num_item + 1])[-args.max_seq_len:]
-    #     user_seen = set(user_train[u] + user_valid[u])
-    #     item_idx = np.array([user_valid[u][0]] + [random_neg(1, num_item + 1, user_seen) for _ in range(num_item_sample)])
-        
-    #     with torch.no_grad():
-    #         predictions = - model(np.array([seq]))      # [batch_size x tokens x (num_item + 1)]
-    #         predictions = predictions[0][-1][item_idx]  # sampling
-            
-    #         # top10_items = predictions.argsort()[:10]
-    #         # top10_items = item_idx[top10_items.cpu().numpy()]
-            
-    #         rank = predictions.argsort().argsort()[0].item() # 0번째 아이템은 상위 몇번째?
-        
-    #     if rank < 10: # @10
-    #         NDCG += 1 / np.log2(rank + 2)
-    #         HIT += 1
-            
-    # print(f'NDCG@10: {NDCG / num_user_sample}| HIT@10: {HIT / num_user_sample}')
+            #-- validataion
+            torch.cuda.empty_cache()
+            with torch.no_grad():
+                model.eval()
+                valid_loss = 0
+                masked_cnt = 0
+                correct_cnt = 0
+
+                for _log_seqs, _labels in valid_loader:
+
+                    _logits = model(_log_seqs)
+
+                    y_hat = _logits[:,:].argsort()[:,:,-1].view(-1)
+
+                    # size matching
+                    _logits = _logits.view(-1, _logits.size(-1))   # [51200, 6808]
+                    _labels = _labels.view(-1).to(device)         # 51200
+
+                    _loss = criterion(_logits, _labels)
+                    
+                    correct_cnt += torch.sum((_labels == y_hat) & (_labels != 0))
+                    masked_cnt += _labels.count_nonzero()
+                    valid_loss += _loss
+                
+                valid_loss_avg = valid_loss / len(valid_loader)
+                valid_acc = correct_cnt / masked_cnt
+                if valid_loss_avg < best_val_loss:
+                    print(f"New best model for val loss : {valid_loss_avg:.5f}! saving the best model..")
+                    torch.save(model.state_dict(), f"{save_dir}/best.pth")
+                    best_val_loss = valid_loss_avg
+                    stop_counter = 0
+
+                    #-- [MLflow] Save model artifacts to mlflow
+                    # mlflow.log_artifact(f"{save_dir}/best.pth")
+                    
+                else:
+                    stop_counter += 1
+                    print (f"!!! Early stop counter = {stop_counter}/{patience} !!!")
+                torch.save(model.state_dict(), f"{save_dir}/last.pth")
+                
+                print(
+                    f"[Val] acc : {valid_acc:4.2%}, loss: {valid_loss_avg:.5f} || "
+                    f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:.5f}"
+                )
+
+                print (f"Epoch: {epoch + 1}, valid_acc : {valid_acc: 4.2%}, valid_loss_avg :{valid_loss_avg: .5f}")
+
+                #-- [MLflow] mlflow valid metrics logging
+                mlflow.log_metrics({
+                    "Valid/accuracy" : valid_acc.item(),
+                    "Valid/loss" : valid_loss_avg.item(),
+                },step = epoch) 
+
+                if stop_counter >= patience:
+                    print("Early stopping")
+                    break
 
 if __name__ == '__main__':
 

@@ -35,20 +35,20 @@ class MultiHeadAttention(nn.Module):
         self.layerNorm = nn.LayerNorm(hidden_units, 1e-6) # layer normalization
 
     def forward(self, enc, mask):
-        residual = enc # residual connection을 위해 residual 부분을 저장
+        residual = enc # residual connection을 위해 residual 부분을 저장 => [1024,50,50] B T H
         batch_size, seqlen = enc.size(0), enc.size(1)
         
         #-- Query, Key, Value를 (num_head)개의 Head로 나누어 각기 다른 Linear projection을 통과시킴
-        Q = self.W_Q(enc).view(batch_size, seqlen, self.num_heads, self.hidden_units) 
-        K = self.W_K(enc).view(batch_size, seqlen, self.num_heads, self.hidden_units)
-        V = self.W_V(enc).view(batch_size, seqlen, self.num_heads, self.hidden_units)
+        Q = self.W_Q(enc).view(batch_size, seqlen, self.num_heads, self.hidden_units//self.num_heads) #[1024,50,1,50] B T h H => [1024,50 ,?, 50] 
+        K = self.W_K(enc).view(batch_size, seqlen, self.num_heads, self.hidden_units//self.num_heads)
+        V = self.W_V(enc).view(batch_size, seqlen, self.num_heads, self.hidden_units//self.num_heads)
 
         #-- Head별로 각기 다른 attention이 가능하도록 Transpose 후 각각 attention에 통과시킴
         Q, K, V = Q.transpose(1, 2), K.transpose(1, 2), V.transpose(1, 2)
         output, attn_dist = self.attention(Q, K, V, mask)
 
         #-- 다시 Transpose한 후 모든 head들의 attention 결과를 합칩니다.
-        output = output.transpose(1, 2).contiguous() 
+        output = output.transpose(1, 2).contiguous()
         output = output.view(batch_size, seqlen, -1)
 
         #-- Linear Projection, Dropout, Residual sum, and Layer Normalization
