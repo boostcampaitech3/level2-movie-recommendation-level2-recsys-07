@@ -5,8 +5,12 @@ import os
 from collections import defaultdict
 from pyparsing import col
 from tqdm import tqdm
+import pickle
 
-def preprocess(args, option):
+def preprocess(args):
+
+    if not os.path.isdir('./data'):
+        os.makedirs('./data')
     
     print ("[INFO] Pre-process train_ratings.csv (re-indexing)")
     
@@ -52,6 +56,9 @@ def preprocess(args, option):
     for u, i in tqdm(zip(train_rating_df['user_reidx'], train_rating_df['item_reidx']), total=len(train_rating_df['user_reidx'])):
         user_seen_dict[u].append(i)
 
+    
+    with open("./data/input_data.pickle", "wb") as fw :
+        pickle.dump(user_seen_dict, fw)
 
     # train set, valid set 생성
     user_train = {}

@@ -192,9 +192,8 @@ if __name__ == '__main__':
 
     #-- DataSet Arguments
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
-    parser.add_argument('--train_rating_path', type=str, default="./data/train_ratings.csv")
+    parser.add_argument('--train_rating_path', type=str, default="/opt/ml/input/data/train/train_ratings.csv")
     parser.add_argument('--data_split', type=str, default="split_by_user")
-
     
     #-- DataLoader Arguments
     parser.add_argument('--batch_size', type=int, default=1024, help='number of batch size in each epoch (default: 1024)')
