@@ -4,3 +4,4 @@ __pycache__
 *.pth
 *.ipynb_checkpoints
 *.pickle
+*.txt

@@ -7,7 +7,7 @@ from pyparsing import col
 from tqdm import tqdm
 import pickle
 
-def preprocess(args):
+def preprocess(args, option):
 
     if not os.path.isdir('./data'):
         os.makedirs('./data')
