@@ -59,7 +59,7 @@ class SeqDataset(Dataset):
 
         # if len(seq) < max_len: zero padding
         tokens = [0] * mask_len + tokens
-        labels = [0] * mask_len + labels
+        labels = [0] * mask_len + labels # original sequence
         
         # X: user's watch history without last movie [masked + random sampled(neg, pos)]
         # y: user's watch history without last movie

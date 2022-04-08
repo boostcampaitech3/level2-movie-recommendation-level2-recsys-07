@@ -114,5 +114,5 @@ class BERT4Rec(nn.Module):
         mask = torch.BoolTensor(log_seqs > 0).unsqueeze(1).repeat(1, log_seqs.shape[1], 1).unsqueeze(1).to(self.device) # mask for zero pad
         for block in self.blocks:
             seqs, attn_dist = block(seqs, mask) # BERT4RecBlock(seqs, mask)
-        out = self.out(seqs) # [batch_size x tokens x (num_item + 1)]
+        out = self.out(seqs) # [batch_size x tokens x (num_item + 1)] # token=time set=시간 #num_item+1 번째 : 예측하고자 하는 time #gelu 안해도 ㄱㅊ
         return out

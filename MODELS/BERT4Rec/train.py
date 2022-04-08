@@ -51,7 +51,7 @@ def train(args):
 
     #-- DataLoader: train_loader, valid_loader
     train_loader = DataLoader(train_dataset,
-        batch_size  = args.batch_size, #default batch_size = 1024
+        batch_size  = args.batch_size, #default batch_size = 1024 # 배치는 유저다
         shuffle     = True,
         pin_memory  = use_cuda
     )
@@ -68,7 +68,7 @@ def train(args):
     model = BERT4Rec(num_user, num_item, args.hidden_units, args.num_heads, args.num_layer, args.max_seq_len, args.dropout_rate, device).to(device)
     
     #-- loss
-    criterion = nn.CrossEntropyLoss(ignore_index=0)  # default: cross_entropy
+    criterion = nn.CrossEntropyLoss(ignore_index=0)  # default: cross_entropy # mask 안한 거 빼고 함
     
     #-- optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
