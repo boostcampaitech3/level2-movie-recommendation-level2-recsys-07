@@ -335,7 +335,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_dir', type=str ,default= '/opt/ml/input/data/train/', help='attribute data directory')
     
     # mlflow tracking option
-    parser.add_argument('--tracking_server', type=str ,default= 'http://35.197.48.164:5000/', help='tracking server')
+    parser.add_argument('--tracking_server', type=str ,default= "http://34.105.0.176:5000/", help='tracking server')
     args = parser.parse_args()
 
     if args.config == True:
