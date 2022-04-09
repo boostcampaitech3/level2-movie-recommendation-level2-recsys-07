@@ -1,12 +1,13 @@
 from .base import AbstractTrainer
-from .utils import recalls_and_ndcgs_for_ks
+from .utils import recalls_and_ndcgs_for_ks, get_best_10
 
+import torch
 import torch.nn as nn
 
 
 class BERTTrainer(AbstractTrainer):
-    def __init__(self, args, model, train_loader, val_loader, test_loader, export_root):
-        super().__init__(args, model, train_loader, val_loader, test_loader, export_root)
+    def __init__(self, args, model, train_loader, val_loader, test_loader, inference_loader, export_root):
+        super().__init__(args, model, train_loader, val_loader, test_loader, inference_loader, export_root)
         self.ce = nn.CrossEntropyLoss(ignore_index=0)
 
     @classmethod
@@ -39,3 +40,11 @@ class BERTTrainer(AbstractTrainer):
 
         metrics = recalls_and_ndcgs_for_ks(scores, labels, self.metric_ks)
         return metrics
+    
+    def inference_items(self, batch, user_seen):
+        seqs = batch[0]
+        seqs = seqs.unsqueeze(0)
+        scores = self.model(seqs)
+        scores = scores[:, -1, :]
+        best10 = get_best_10(scores, user_seen)
+        return best10

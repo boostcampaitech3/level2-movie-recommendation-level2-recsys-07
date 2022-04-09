@@ -20,13 +20,9 @@ class ML20MDataset(AbstractDataset):
 
     @classmethod
     def all_raw_file_names(cls):
-        return ['genome-scores.csv',
-                'genome-tags.csv',
-                'links.csv',
-                'movies.csv',
+        return [
                 'ratings.csv',
-                'README.txt',
-                'tags.csv']
+                ]
 
     def load_ratings_df(self):
         folder_path = self._get_rawdata_folder_path()
