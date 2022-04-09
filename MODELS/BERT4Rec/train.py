@@ -19,7 +19,7 @@ from model import BERT4Rec
 import mlflow
 
 EXPRIMENT_NAME = "Bert4Rec"
-TRACKiNG_URI = "http://35.197.48.164:5000/"#"http://34.105.0.176:5000/"
+TRACKiNG_URI = "http://34.105.0.176:5000/"#"http://34.105.0.176:5000/"
 
 def train(args):
     
@@ -213,7 +213,7 @@ if __name__ == '__main__':
     
     #-- Trainer Arguments
     parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')
-    parser.add_argument('--epochs', type=int, default=3, help='number of epochs to train (default: 100)')
+    parser.add_argument('--epochs', type=int, default=100, help='number of epochs to train (default: 100)')
     parser.add_argument('--lr_decay_step', type=int, default=30, help='lr decay step (default: 20)')
     parser.add_argument('--patience', type=int, default=10, help='early stopping type (default: 10)')
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
