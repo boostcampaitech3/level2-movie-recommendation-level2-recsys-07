@@ -45,7 +45,7 @@ class MultiHeadAttention(nn.Module):
 
         #-- Head별로 각기 다른 attention이 가능하도록 Transpose 후 각각 attention에 통과시킴
         Q, K, V = Q.transpose(1, 2), K.transpose(1, 2), V.transpose(1, 2)
-        output, attn_dist = self.attention(Q, K, V, mask)
+        output, attn_dist = self.attention(Q, K, V, mask) # padding mask
 
         #-- 다시 Transpose한 후 모든 head들의 attention 결과를 합칩니다.
         output = output.transpose(1, 2).contiguous()

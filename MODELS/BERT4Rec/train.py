@@ -1,3 +1,4 @@
+from pydoc import doc
 import torch
 import torch.nn as nn
 
@@ -18,7 +19,7 @@ from model import BERT4Rec
 import mlflow
 
 EXPRIMENT_NAME = "Bert4Rec"
-TRACKiNG_URI = "http://34.105.0.176:5000/"
+TRACKiNG_URI = "http://34.105.0.176:5000/"#"http://34.105.0.176:5000/"
 
 def train(args):
     
@@ -29,9 +30,14 @@ def train(args):
     save_dir = increment_path(os.path.join('./exp/', args.name))
     os.makedirs(save_dir)
     
+    
     #-- Save current param
     with open(os.path.join(save_dir, 'config.yaml'), 'w') as yaml_file:
-        yaml.dump(dict(args), yaml_file, default_flow_style=False)
+        if(type(args) == dotdict):
+            save_param = dict(args)
+        else:
+            save_param = vars(args)
+        yaml.dump(save_param, yaml_file, default_flow_style=False)
 
     #-- Use CUDA if available
     use_cuda = torch.cuda.is_available()
@@ -54,12 +60,12 @@ def train(args):
 
     #-- DataLoader: train_loader, valid_loader
     train_loader = DataLoader(train_dataset,
-        batch_size  = args.batch_size, #default batch_size = 1024 # 배치는 유저다
+        batch_size  = args.train_batch_size, #default batch_size = 1024 # 배치는 유저다
         shuffle     = True,
         pin_memory  = use_cuda
     )
     valid_loader = DataLoader(valid_dataset, 
-        batch_size  = args.batch_size, #default batch_size = 1024
+        batch_size  = args.valid_batch_size, #default batch_size = 1024
         shuffle     = True,
         pin_memory  = use_cuda
     )
@@ -95,7 +101,7 @@ def train(args):
     mlflow.set_experiment(EXPRIMENT_NAME)
     #-- mlflow setting
     with mlflow.start_run() as run:
-        mlflow.log_params(vars(args))                  # save params
+        mlflow.log_params(save_param)                  # save params
         mlflow.log_artifact(f"{save_dir}/config.yaml") # config.yaml save
         #-- Start Train
         print (f"[DEBUG] Start of TRAINING")
@@ -159,6 +165,7 @@ def train(args):
                     print(f"New best model for val loss : {valid_loss_avg:.5f}! saving the best model..")
                     torch.save(model, f"{save_dir}/best.pth")
                     best_val_loss = valid_loss_avg
+                    best_val_acc = valid_acc
                     stop_counter = 0
 
                     #-- [MLflow] Save model artifacts to mlflow
@@ -193,7 +200,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
     # config option
-    parser.add_argument('--config', type=bool, default=True, help = 'using config using option')
+    parser.add_argument('--config', type=bool, default=False, help = 'using config using option')
 
     #-- DataSet Arguments
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
@@ -201,7 +208,8 @@ if __name__ == '__main__':
     parser.add_argument('--data_split', type=str, default="split_by_user")
     
     #-- DataLoader Arguments
-    parser.add_argument('--batch_size', type=int, default=1024, help='number of batch size in each epoch (default: 1024)')
+    parser.add_argument('--train_batch_size', type=int, default=64, help='number of train batch size in each epoch (default: 64)')
+    parser.add_argument('--valid_batch_size', type=int, default=1024, help='number of valid batch size in each epoch (default: 1024)')
     
     #-- Trainer Arguments
     parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')

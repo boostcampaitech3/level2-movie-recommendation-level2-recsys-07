@@ -2,7 +2,8 @@
 val_ratio : 0.2
 train_rating_path : "./data/train_ratings.csv"
 data_split : "split_by_user" #leave_one_out
-batch_size : 1024
+train_batch_size : 64
+valid_batch_size : 1024
 seed : 42
 epochs : 100
 lr_decay_step : 30
