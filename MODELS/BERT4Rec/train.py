@@ -1,3 +1,4 @@
+from pydoc import doc
 import torch
 import torch.nn as nn
 
@@ -18,7 +19,7 @@ from model import BERT4Rec
 import mlflow
 
 EXPRIMENT_NAME = "Bert4Rec"
-TRACKiNG_URI = "http://34.105.0.176:5000/"
+TRACKiNG_URI = "http://34.105.0.176:5000/"#"http://34.105.0.176:5000/"
 
 def train(args):
     
@@ -29,9 +30,14 @@ def train(args):
     save_dir = increment_path(os.path.join('./exp/', args.name))
     os.makedirs(save_dir)
     
+    
     #-- Save current param
     with open(os.path.join(save_dir, 'config.yaml'), 'w') as yaml_file:
-        yaml.dump(dict(args), yaml_file, default_flow_style=False)
+        if(type(args) == dotdict):
+            save_param = dict(args)
+        else:
+            save_param = vars(args)
+        yaml.dump(save_param, yaml_file, default_flow_style=False)
 
     #-- Use CUDA if available
     use_cuda = torch.cuda.is_available()
@@ -95,7 +101,7 @@ def train(args):
     mlflow.set_experiment(EXPRIMENT_NAME)
     #-- mlflow setting
     with mlflow.start_run() as run:
-        mlflow.log_params(vars(args))                  # save params
+        mlflow.log_params(save_param)                  # save params
         mlflow.log_artifact(f"{save_dir}/config.yaml") # config.yaml save
         #-- Start Train
         print (f"[DEBUG] Start of TRAINING")
@@ -194,7 +200,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
     # config option
-    parser.add_argument('--config', type=bool, default=True, help = 'using config using option')
+    parser.add_argument('--config', type=bool, default=False, help = 'using config using option')
 
     #-- DataSet Arguments
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
