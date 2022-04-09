@@ -92,7 +92,7 @@ print("data loading compelete!")
 #Load model
 EXP_N = args.exp_num
 #model = torch.load(f"./exp/experiment{EXP_N}/best.pth").to(device)
-model = torch.load(f"./exp/experiment{EXP_N}/model.pt").to(device)
+model = torch.load(f"./exp/experiment{EXP_N}/best.pth").to(device)
 model.eval()
 
 with open(f'./exp/experiment{EXP_N}/config.yaml') as f:
