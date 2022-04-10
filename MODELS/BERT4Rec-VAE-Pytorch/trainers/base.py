@@ -1,20 +1,21 @@
 from loggers import *
 from config import STATE_DICT_KEY, OPTIMIZER_STATE_DICT_KEY
 from utils import AverageMeterSet
+from .utils import make_inference_file
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-
+import pandas as pd
 import json
 from abc import *
 from pathlib import Path
 
 
 class AbstractTrainer(metaclass=ABCMeta):
-    def __init__(self, args, model, train_loader, val_loader, test_loader, export_root):
+    def __init__(self, args, model, train_loader, val_loader, test_loader, inference_loader, export_root):
         self.args = args
         self.device = args.device
         self.model = model.to(self.device)
@@ -25,6 +26,7 @@ class AbstractTrainer(metaclass=ABCMeta):
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.test_loader = test_loader
+        self.inference_loader = inference_loader
         self.optimizer = self._create_optimizer()
         if args.enable_lr_schedule:
             self.lr_scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=args.decay_step, gamma=args.gamma)
@@ -157,7 +159,6 @@ class AbstractTrainer(metaclass=ABCMeta):
             tqdm_dataloader = tqdm(self.test_loader)
             for batch_idx, batch in enumerate(tqdm_dataloader):
                 batch = [x.to(self.device) for x in batch]
-
                 metrics = self.calculate_metrics(batch)
 
                 for k, v in metrics.items():
@@ -173,6 +174,28 @@ class AbstractTrainer(metaclass=ABCMeta):
             with open(os.path.join(self.export_root, 'logs', 'test_metrics.json'), 'w') as f:
                 json.dump(average_metrics, f, indent=4)
             print(average_metrics)
+            
+    def inference(self):
+        print('Inference best model with all dataset!')
+
+        best_model = torch.load(os.path.join(self.export_root, 'models', 'best_acc_model.pth')).get('model_state_dict')
+        self.model.load_state_dict(best_model)
+        self.model.eval()
+
+        recommend_list = {}
+        
+        # 점수가 높은 것을 뽑되, 안 본 것들 중에서!!
+        train_ratings_df = pd.read_csv("/opt/ml/level2-movie-recommendation-level2-recsys-07/MODELS/BERT4Rec-VAE-Pytorch/Data/ml-20m/ratings.csv")
+        
+        with torch.no_grad():
+            tqdm_dataloader = tqdm(self.inference_loader)
+            for batch_idx, batch in enumerate(tqdm_dataloader): # batch_size = 1
+                batch = [x.to(self.device) for x in batch]
+                user_seen = train_ratings_df[train_ratings_df["userId"] == batch_idx + 1]["movieId"]
+                rec10 = self.inference_items(batch, user_seen)
+                recommend_list[batch_idx + 1] = rec10
+                
+        make_inference_file(recommend_list, self.args)
 
     def _create_optimizer(self):
         args = self.args
