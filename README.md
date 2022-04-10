@@ -55,5 +55,15 @@ mlflow.set_experiment(<EXPRIMENT_NAME>) # 실험 이름(ex : DeepFM)
         )
 ```
 
-4. Model 저장
-##### TODO ####
+4. Artifacts 저장
+기타 파일(모델, log 파일 등)은 `mlflow.log_artifact` 함수로 저장할 수 있다.
+`with mlflow.start_run()` 블럭 내부에서 validation 이 끝난 후 모델을 저장한다
+```code
+    with mlflow.start_run() as run:
+        #Artifact 파일 저장
+        mlflow.log_artifact(<Artifact path>) #저장할 Artifact의 경로 지정
+        
+        #Artifact 폴더 저장
+        mlflow.log_artifacts(<Artifact folder path>) #저장할 폴더를 지정하여 폴더 내 모든 파일을 저장할 수 있음
+```
+
