@@ -1,3 +1,4 @@
+from ntpath import join
 import os
 import torch
 from torch.utils.data import Dataset
@@ -44,11 +45,18 @@ class RatingDataset(Dataset):
         """
         
         self.args = args
-        self.rating_df = neg_sample(rating_df, self.args.negative_num) # args.negative num
         self.attr_df = attr_df
         
         # self.data = ["user", "item", "rating", "genre", "writer"]
-        self.data = join_attribute(self.rating_df, self.attr_df) # args.attr
+        #-- Join DataFrames on "item" column
+        JOINED_RATING_PATH = "./data/train/joined_rating_df.csv"
+        if os.path.isfile(JOINED_RATING_PATH):
+            print(f"[INFO] Joined rating DataFrame exists. Using this csv file...")
+            self.data = pd.read_csv(JOINED_RATING_PATH)
+        else:
+            self.rating_df = neg_sample(rating_df, self.args.negative_num) # args.negative num
+            self.data = join_attribute(self.rating_df, self.attr_df) # args.attr
+        
         self.X, self.y = feature_matrix(data=self.data, attr=["genre", "writer"]) # args.attr
         
         self.train_df = pd.read_csv("./data/train/rating.csv")
@@ -90,8 +98,8 @@ class InferenceDataset(Dataset):
         self.setup()
         
     def setup(self):
-        INFERENCE_SAMPLE_PATH = "./data/train/inference_sample.csv" 
-        
+        INFERENCE_SAMPLE_PATH = "./data/train/neg_sample_final.csv" 
+        #INFERENCE_JOIN_DF_PATH = "./data/eval/inference_join.csv"
         #-- Read DataFrame "ratings.csv", "genre_writer.csv"
         rating_df = pd.read_csv(self.rating_dir)
         attr_df = pd.read_csv(self.attr_dir, index_col=0)
@@ -112,6 +120,10 @@ class InferenceDataset(Dataset):
         print('[DEBUG] Merge attribute dataframe')
         
         #-- Merge <User unseen data, item_genre_writer>
+        #if os.path.isfile(INFERENCE_JOIN_DF_PATH):
+            #print('[INFO] Join Data file exist. Using this csv file')
+            #joined_rating_df = pd.read_csv(INFERENCE_JOIN_DF_PATH)
+        #else:
         joined_rating_df = pd.merge(data, attr_df, left_on='item', right_on='item', how='inner')
         print('[DEBUG] Merge finished')
         
@@ -119,13 +131,13 @@ class InferenceDataset(Dataset):
         users.sort()
         items = list(set((joined_rating_df.loc[:, 'item'])))
         items.sort()
-
+        print('[INFO] Making user set, dict')
         if len(users)-1 != max(users):
             users_dict = {users[i]: i for i in range(len(users))}
             self.user_dict = {v:k for k,v in users_dict.items()}
             joined_rating_df['user']  = joined_rating_df['user'].map(lambda x : users_dict[x])
             users = list(set(joined_rating_df.loc[:,'user']))
-                
+        print('[INFO] Making item set, dict')        
         if len(items) - 1 != max(items):
             items_dict = {items[i]: i for i in range(len(items))}
             self.item_dict = {v:k for k,v in items_dict.items()}
@@ -134,7 +146,10 @@ class InferenceDataset(Dataset):
 
         joined_rating_df = joined_rating_df.sort_values(by=['user'])
         joined_rating_df.reset_index(drop=True, inplace=True)
-        
+        #if os.path.isfile(INFERENCE_JOIN_DF_PATH) == False:
+        #    print('[INFO] Making Join DataFrame csv file')
+        #    joined_rating_df.to_csv(INFERENCE_JOIN_DF_PATH, index=False)
+
         self.data = joined_rating_df
         self.X = self._feature_matrix(self.args.attr)
 
@@ -144,7 +159,7 @@ class InferenceDataset(Dataset):
         data = list()
 
         unpopular_items = get_unpopular_item(rating_df)
-
+        
         for user in tqdm(rating_df["user"].unique()):
             user_seen_items = set(rating_df[rating_df["user"] == user]["item"])
             
