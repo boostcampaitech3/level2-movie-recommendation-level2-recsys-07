@@ -160,11 +160,9 @@ if __name__ == '__main__':
                         help='use CUDA')
     parser.add_argument('--log_interval', type=int, default=100, metavar='N',
                         help='report interval')
-    parser.add_argument('--save', type=str, default='model.pt',
-                        help='path to save the final model')
     parser.add_argument('--patience', type=str, default=10,
                         help='Early Stopping에 들어갈 patience')
-    parser.add_argument('--checkpoint_path', type=str, default='./exp/',
+    parser.add_argument('--checkpoint_path', type=str, default='Multi_VAE.pth',
                         help='Early Stopping에 들어갈 patience')
     parser.add_argument('--name', type=str, default='experiment', 
                         help='model save at ./exp/{name}')
@@ -183,7 +181,7 @@ if __name__ == '__main__':
     os.makedirs(save_dir)
     
     #-- check point file path
-    args.checkpoint_path = os.path.join(save_dir, "Early_stop.pth")
+    args.checkpoint_path = os.path.join(save_dir,  args.checkpoint_path)
 
     # -- Set the random seed manually for reproductibility.
     torch.manual_seed(args.seed)

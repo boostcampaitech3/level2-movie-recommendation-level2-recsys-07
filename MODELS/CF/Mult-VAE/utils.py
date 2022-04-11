@@ -51,7 +51,6 @@ class EarlyStopping:
         """Saves model when the performance is better."""
         if self.verbose:
             print(f"Better performance. Saving model ...")
-
         torch.save(model,f'{self.checkpoint_path}') # changed to save model itself
         self.score_min = score
 

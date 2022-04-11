@@ -9,7 +9,6 @@ total_anneal_steps: 200000
 anneal_cap: 0.2
 cuda: True
 log_interval: 100
-save: "model.pt"
 patience: 10
-checkpoint_path: "./exp/"
+checkpoint_path: "Multi_VAE.pth"
 name : "experiment" # 실험 명칭
