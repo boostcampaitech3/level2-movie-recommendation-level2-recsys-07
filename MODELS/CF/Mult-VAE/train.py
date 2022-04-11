@@ -165,7 +165,7 @@ if __name__ == '__main__':
                         help='path to save the final model')
     parser.add_argument('--patience', type=str, default=10,
                         help='Early Stopping에 들어갈 patience')
-    parser.add_argument('--checkpoint_path', type=str, default='./exp',
+    parser.add_argument('--checkpoint_path', type=str, default='./exp/',
                         help='Early Stopping에 들어갈 patience')
 
     #-- Experiment Arguments
@@ -174,12 +174,12 @@ if __name__ == '__main__':
     args = parser.parse_args([])
 
     #-- save directory setting
-    save_dir = increment_path(os.path.join('./exp', args.name))
+    save_dir = increment_path(os.path.join('./exp/', args.name))
     
     os.makedirs(save_dir)
     
-    args.checkpoint_path = os.path.join(save_dir, "Mult_VAE.pt")
-    print(args.checkpoint_path)
+    args.checkpoint_path = os.path.join(save_dir, "EarlyStop_checkpoint.pt")
+    print('args.checkpoint_path',args.checkpoint_path)
     print("*"*80)
     #-- load config.yaml
     if args.config == True:
