@@ -155,7 +155,8 @@ class PretrainTrainer(Trainer):
             # 0. batch_data will be sent into the device(GPU or CPU)
             batch = tuple(t.to(self.device) for t in batch)
             (
-                attributes,
+                attributes_genre,
+                attributes_writer,
                 masked_item_sequence,
                 pos_items,
                 neg_items,
@@ -165,7 +166,8 @@ class PretrainTrainer(Trainer):
             ) = batch
 
             aap_loss, mip_loss, map_loss, sp_loss = self.model.pretrain(
-                attributes,
+                attributes_genre,
+                attributes_writer,
                 masked_item_sequence,
                 pos_items,
                 neg_items,
@@ -175,7 +177,7 @@ class PretrainTrainer(Trainer):
             )
 
             joint_loss = (
-                self.aap_weight * aap_loss
+                self.args.aap_weight * aap_loss
                 + self.args.mip_weight * mip_loss
                 + self.args.map_weight * map_loss
                 + self.args.sp_weight * sp_loss
