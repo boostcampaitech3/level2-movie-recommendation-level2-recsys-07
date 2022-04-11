@@ -173,20 +173,20 @@ if __name__ == '__main__':
     
     args = parser.parse_args([])
 
-    #-- save directory setting
-    save_dir = increment_path(os.path.join('./exp/', args.name))
-    
-    os.makedirs(save_dir)
-    
-    args.checkpoint_path = os.path.join(save_dir, "EarlyStop_checkpoint.pt")
-    print('args.checkpoint_path',args.checkpoint_path)
-    print("*"*80)
     #-- load config.yaml
     if args.config == True:
         print("Using config.yaml option")
         with open('./config.yaml') as f: #set config.yml path
             config = yaml.safe_load(f)
         args = dotdict(config)
+    
+    #-- save directory setting
+    save_dir = increment_path(os.path.join('./exp/', args.name))
+    os.makedirs(save_dir)
+    
+    #-- check point file path
+    args.checkpoint_path = os.path.join(save_dir, "Mult_VAE.pth")
+
 
 
     # -- Set the random seed manually for reproductibility.

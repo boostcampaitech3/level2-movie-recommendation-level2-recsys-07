@@ -53,7 +53,7 @@ class EarlyStopping:
             print(f"Better performance. Saving model ...")
         #torch.save(model.state_dict(), self.checkpoint_path)
         print('self.checkpoint_path::::::::::::;',self.checkpoint_path)
-        torch.save(model,self.checkpoint_path) # changed to save model itself
+        torch.save(model,f'{self.checkpoint_path}') # changed to save model itself
         self.score_min = score
 
 def increment_path(path):
