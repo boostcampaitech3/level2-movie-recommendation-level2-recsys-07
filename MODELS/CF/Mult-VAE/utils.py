@@ -50,3 +50,9 @@ class EarlyStopping:
             print(f"Better performance. Saving model ...")
         torch.save(model.state_dict(), self.checkpoint_path)
         self.score_min = score
+
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
