@@ -142,7 +142,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--data', type=str, default='/opt/ml/input/data/train/',
                         help='Movielens dataset location')
-
     parser.add_argument('--lr', type=float, default=1e-4,
                         help='initial learning rate')
     parser.add_argument('--wd', type=float, default=0.00,
@@ -167,9 +166,8 @@ if __name__ == '__main__':
                         help='Early Stopping에 들어갈 patience')
     parser.add_argument('--checkpoint_path', type=str, default='./exp/',
                         help='Early Stopping에 들어갈 patience')
-
-    #-- Experiment Arguments
-    parser.add_argument('--name', type=str, default='experiment', help='model save at ./exp/{name}')
+    parser.add_argument('--name', type=str, default='experiment', 
+                        help='model save at ./exp/{name}')
     
     args = parser.parse_args([])
 
@@ -185,9 +183,7 @@ if __name__ == '__main__':
     os.makedirs(save_dir)
     
     #-- check point file path
-    args.checkpoint_path = os.path.join(save_dir, "Mult_VAE.pth")
-
-
+    args.checkpoint_path = os.path.join(save_dir, "Early_stop.pth")
 
     # -- Set the random seed manually for reproductibility.
     torch.manual_seed(args.seed)
