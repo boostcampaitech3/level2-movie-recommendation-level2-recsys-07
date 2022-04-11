@@ -20,8 +20,8 @@ from utils import (
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--data_dir", default="../data/train/", type=str)
-    parser.add_argument("--output_dir", default="output/", type=str)
+    parser.add_argument("--data_dir", default="/opt/ml/level2-movie-recommendation-level2-recsys-07/MODELS/S3Rec/data/train", type=str)
+    parser.add_argument("--output_dir", default="./output/", type=str)
     parser.add_argument("--data_name", default="Ml", type=str)
 
     # model args
@@ -91,8 +91,8 @@ def main():
     args.cuda_condition = torch.cuda.is_available() and not args.no_cuda
 
     # args.data_file = args.data_dir + args.data_name + '.txt'
-    args.data_file = args.data_dir + "train_ratings.csv"
-    item2attribute_file = args.data_dir + args.data_name + "_item2attributes.json"
+    args.data_file = os.path.join(args.data_dir, "train_ratings.csv")
+    item2attribute_file = os.path.join(args.data_dir, args.data_name+"_item2attributes.json")
     # concat all user_seq get a long sequence, from which sample neg segment for SP
     user_seq, max_item, long_sequence = get_user_seqs_long(args.data_file)
 
