@@ -1,0 +1,21 @@
+#config.yml
+seed : 42                   # random seed
+epochs : 20                 # number of epochs to train
+batch_size: 1000              # number of batch size
+dataset: "RatingDataset"    # dataset type
+model : "DeepFM"            # model type
+optimizer: "Adam"           # optimizer type
+scheduler: "StepLR"         # scheduler type
+lr_decay_step: 30           # lr decay step
+early_stopping: 10          # early stopping type
+lr: 1.0e-4                  # learning rate
+drop_ratio: 0.1             # ratio for drop out
+val_ratio: 0.2              # ratio for validaton
+criterion: "bce_loss"       # criterion type
+embedding_dim: 10           # embedding dimention
+name: "experiment"          # model save at ./exp/expriment
+negative_num : 50           # negative sample numbers
+attr: ["genre", "writer"]   # attributes type
+attr_csv: "genre_writer"    # name of attribute csv
+data_dir: './data/train/'   # train data directory
+tracking_server: "http://34.105.0.176:5000/"
