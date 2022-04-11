@@ -17,6 +17,5 @@ filter_triplets : 5개 이하의 interaction을 가진 user 제외 -> 대회에�
 - loss
 - metric
 
-###################
-#22.4.3 special mission2 Multi-VAE정답 파일에서 -> MultiVAE 테스트 (TODO) 부분 빼고 구현 완료
-#n100 r20 r50 : nan뜨는 문제 고쳐야함 
+## 순서
+train.py -> MVAE_inference.ipynb

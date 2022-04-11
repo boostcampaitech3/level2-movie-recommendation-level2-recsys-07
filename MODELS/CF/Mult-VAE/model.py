@@ -86,7 +86,7 @@ class MultiVAE(nn.Module):
     def forward(self, input):
         mu, logvar = self.encode(input) # encoder를 통해 평균과 로그 분산 계산
         z = self.reparameterize(mu, logvar) # 평균과 분산으로 sampling -> 해당 경우 유저별로 200개의 값이 나온다
-        return self.decode(z), mu, logvar # sample들을 decoder에 넣어 최종 확률 값 도출
+        return self.decode(z), mu, logvar # sample들을 decoder에 넣어 최종 확률 값 도출 #R끝끝
     
     def encode(self, input):
         h = F.normalize(input) # 값들을 정규화
