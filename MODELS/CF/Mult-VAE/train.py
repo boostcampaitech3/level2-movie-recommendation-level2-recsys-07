@@ -174,13 +174,12 @@ if __name__ == '__main__':
     args = parser.parse_args([])
 
     #-- save directory setting
-    save_dir = increment_path(os.path.join('./exp', args.name))
-    
+    save_dir = increment_path(os.path.join('./exp/', args.name))
     os.makedirs(save_dir)
     
-    args.checkpoint_path = os.path.join(save_dir, "Mult_VAE.pt")
-    print(args.checkpoint_path)
-    print("*"*80)
+    #-- check point file path
+    args.checkpoint_path = os.path.join(save_dir, "Mult_VAE.pth")
+
     #-- load config.yaml
     if args.config == True:
         print("Using config.yaml option")
