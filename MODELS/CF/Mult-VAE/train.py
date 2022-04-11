@@ -1,4 +1,5 @@
 import argparse
+import yaml
 import time
 import torch
 import torch.nn as nn
@@ -11,9 +12,15 @@ from loss import *
 from model import *
 from utils import *
 
+import mlflow
+
+EXPRIMENT_NAME = "Multi-VAE"
+TRACKiNG_URI = "http://34.105.0.176:5000/" #"http://34.105.0.176:5000/"
+
 # mlflow setting
 def mlflow_set():
-    return
+    mlflow.set_tracking_uri(TRACKiNG_URI)
+    mlflow.set_experiment(EXPRIMENT_NAME)
 
 def train(model, criterion, optimizer, is_VAE = False):
     # Turn on training mode
@@ -23,7 +30,7 @@ def train(model, criterion, optimizer, is_VAE = False):
     global update_count
 
     np.random.shuffle(idxlist)
-    
+
     for batch_idx, start_idx in enumerate(range(0, N, args.batch_size)): # 0 ~ 총 데이터 개수까지 batch size만큼 잘라서 indexing
         end_idx = min(start_idx + args.batch_size, N) # 총 데이터 개수를 넘지 않게 min 
         data = train_data[idxlist[start_idx:end_idx]] 
@@ -130,16 +137,18 @@ if __name__ == '__main__':
     ## 각종 파라미터 세팅
     parser = argparse.ArgumentParser(description='PyTorch Variational Autoencoders for Collaborative Filtering')
 
+    # config option
+    parser.add_argument('--config', type=bool, default=True, help = 'using config using option')
+
     parser.add_argument('--data', type=str, default='/opt/ml/input/data/train/',
                         help='Movielens dataset location')
-
     parser.add_argument('--lr', type=float, default=1e-4,
                         help='initial learning rate')
     parser.add_argument('--wd', type=float, default=0.00,
                         help='weight decay coefficient')
     parser.add_argument('--batch_size', type=int, default=500,
                         help='batch size')
-    parser.add_argument('--epochs', type=int, default=200,
+    parser.add_argument('--epochs', type=int, default=20,
                         help='upper epoch limit')
     parser.add_argument('--total_anneal_steps', type=int, default=200000,
                         help='the total number of gradient updates for annealing')
@@ -151,18 +160,30 @@ if __name__ == '__main__':
                         help='use CUDA')
     parser.add_argument('--log_interval', type=int, default=100, metavar='N',
                         help='report interval')
-    parser.add_argument('--save', type=str, default='model.pt',
-                        help='path to save the final model')
     parser.add_argument('--patience', type=str, default=10,
                         help='Early Stopping에 들어갈 patience')
-    parser.add_argument('--checkpoint_path', type=str, default='/opt/ml/level2-movie-recommendation-level2-recsys-07/MODELS/CF/Mult-VAE/output/"',
+    parser.add_argument('--checkpoint_path', type=str, default='Multi_VAE.pth',
                         help='Early Stopping에 들어갈 patience')
-    parser.add_argument("--output_dir", default="/opt/ml/level2-movie-recommendation-level2-recsys-07/MODELS/CF/Mult-VAE/output/", type=str)
-
+    parser.add_argument('--name', type=str, default='experiment', 
+                        help='model save at ./exp/{name}')
+    
     args = parser.parse_args([])
 
-    args.checkpoint_path = os.path.join(args.output_dir, "Mult_VAE.pt")
-    # Set the random seed manually for reproductibility.
+    #-- load config.yaml
+    if args.config == True:
+        print("Using config.yaml option")
+        with open('./config.yaml') as f: #set config.yml path
+            config = yaml.safe_load(f)
+        args = dotdict(config)
+    
+    #-- save directory setting
+    save_dir = increment_path(os.path.join('./exp/', args.name))
+    os.makedirs(save_dir)
+    
+    #-- check point file path
+    args.checkpoint_path = os.path.join(save_dir,  args.checkpoint_path)
+
+    # -- Set the random seed manually for reproductibility.
     torch.manual_seed(args.seed)
 
     #만약 GPU가 사용가능한 환경이라면 GPU를 사용
@@ -175,6 +196,16 @@ if __name__ == '__main__':
     print(args)
 
     ###################
+    # Save current argument
+    with open(os.path.join(save_dir, 'config.yaml'), 'w') as yaml_file:
+        if(type(args) == dotdict):
+            save_param = dict(args)
+        else:
+            save_param = vars(args)
+        yaml.dump(save_param, yaml_file, default_flow_style=False)
+
+    ###################
+    
     print("Load and Preprocess Movielens dataset")
     # Load Data
     DATA_DIR = args.data
@@ -275,7 +306,6 @@ if __name__ == '__main__':
     ###############################################################################
     # Load data
     ###############################################################################
-
     loader = DataLoader(args.data)
 
     n_items = loader.load_n_items() # train에 속한 item id의 갯수 =6807
@@ -289,7 +319,6 @@ if __name__ == '__main__':
     ###############################################################################
     # Build the model
     ###############################################################################
-
     p_dims = [200, 600, n_items]  #[200, 600, 6807]
     model = MultiVAE(p_dims).to(device)
 
@@ -299,46 +328,69 @@ if __name__ == '__main__':
     ###############################################################################
     # Training code
     ###############################################################################
+    
+    # Mlflow setting
+    
+    mlflow_set()
 
     best_n100 = -np.inf
     update_count = 0
     early_stopping = EarlyStopping(args.checkpoint_path, patience=args.patience, verbose=True)
-    for epoch in range(1, args.epochs + 1):
-        epoch_start_time = time.time()
-        train(model, criterion, optimizer, is_VAE=True)
-        val_loss, n100, r20, r50 = evaluate(model, criterion, vad_data_tr, vad_data_te, is_VAE=True)
-        print('-' * 89)
-        print('| end of epoch {:3d} | time: {:4.2f}s | valid loss {:4.2f} | '
-                'n100 {:5.3f} | r20 {:5.3f} | r50 {:5.3f}'.format(
-                    epoch, time.time() - epoch_start_time, val_loss,
-                    n100, r20, r50))
-        print('-' * 89)
 
-        n_iter = epoch * len(range(0, N, args.batch_size))
+    with mlflow.start_run(run_name= args.name) as run:
+        mlflow.log_params(save_param)
+        for epoch in range(1, args.epochs + 1):
+            epoch_start_time = time.time()
+            train(model, criterion, optimizer, is_VAE=True)
+            val_loss, n100, r20, r50 = evaluate(model, criterion, vad_data_tr, vad_data_te, is_VAE=True)
+            print('-' * 89)
+            print('| end of epoch {:3d} | time: {:4.2f}s | valid loss {:4.2f} | '
+                    'n100 {:5.3f} | r20 {:5.3f} | r50 {:5.3f}'.format(
+                        epoch, time.time() - epoch_start_time, val_loss,
+                        n100, r20, r50))
+            print('-' * 89)
 
+            n_iter = epoch * len(range(0, N, args.batch_size))
 
-        # # Save the model if the n100 is the best we've seen so far.
-        # if n100 > best_n100:
+            #-- [Mlflow] mlflow valid metrics logging
+            mlflow.log_metrics({
+            "Valid/loss" : val_loss,
+            "Valid/n100" : n100,
+            "Valid/r50" : r50,
+            "Valid/r20" : r20,
+            })
+            
+            # # Save the model if the n100 is the best we've seen so far.
+            # if n100 > best_n100:
+            #     with open(args.save, 'wb') as f:
+            #         torch.save(model, f)
+            #     best_n100 = n100
+
+            early_stopping(val_loss, model)
+            if early_stopping.early_stop:
+                print("Early stopping")
+                break
         #     with open(args.save, 'wb') as f:
-        #         torch.save(model, f)
-        #     best_n100 = n100
+        #         torch.save(torch.load(args.checkpoint_path), f)
+        #         # trainer.model.load_state_dict(torch.load(args.checkpoint_path))
+        #         # model.load_state_dict(torch.load('checkpoint.pt'))
 
-        early_stopping(val_loss, model)
-        if early_stopping.early_stop:
-            print("Early stopping")
-            break
-    #     with open(args.save, 'wb') as f:
-    #         torch.save(torch.load(args.checkpoint_path), f)
-    #         # trainer.model.load_state_dict(torch.load(args.checkpoint_path))
-    #         # model.load_state_dict(torch.load('checkpoint.pt'))
+        # Load the best saved model.
+        model = torch.load(args.checkpoint_path)
 
-    # Load the best saved model.
-    with open(args.save, 'rb') as f:
-        model.load_state_dict(torch.load(args.checkpoint_path))
+        # Run on test data.
+        test_loss, n100, r20, r50 = evaluate(model, criterion, test_data_tr, test_data_te, is_VAE=True)
+        print('=' * 89)
+        print('| End of training | test loss {:4.2f} | n100 {:4.2f} | r20 {:4.2f} | '
+                'r50 {:4.2f}'.format(test_loss, n100, r20, r50))
+        print('=' * 89)
 
-    # Run on test data.
-    test_loss, n100, r20, r50 = evaluate(model, criterion, test_data_tr, test_data_te, is_VAE=True)
-    print('=' * 89)
-    print('| End of training | test loss {:4.2f} | n100 {:4.2f} | r20 {:4.2f} | '
-            'r50 {:4.2f}'.format(test_loss, n100, r20, r50))
-    print('=' * 89)
+        #-- [Mlflow] mlflow test metrics logging
+        mlflow.log_metrics({
+            "Test/loss" : test_loss,
+            "Test/n100" : n100,
+            "Test/r50" : r50,
+            "Test/r20" : r20,
+        })
+        #-- [Mlflow] save artifacts
+        mlflow.log_artifacts(save_dir)

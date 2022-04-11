@@ -16,3 +16,6 @@ filter_triplets : 5개 이하의 interaction을 가진 user 제외 -> 대회에�
 ## loss.py
 - loss
 - metric
+
+## 순서
+train.py -> MVAE_inference.ipynb

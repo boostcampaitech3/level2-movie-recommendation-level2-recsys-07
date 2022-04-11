@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 import torch
+from pathlib import Path
+import glob
+import re
 
 class EarlyStopping:
     """Early stops the training if validation loss doesn't improve after a given patience."""
@@ -48,5 +51,22 @@ class EarlyStopping:
         """Saves model when the performance is better."""
         if self.verbose:
             print(f"Better performance. Saving model ...")
-        torch.save(model.state_dict(), self.checkpoint_path)
+        torch.save(model,f'{self.checkpoint_path}') # changed to save model itself
         self.score_min = score
+
+def increment_path(path):
+    path = Path(path)
+    if(not path.exists()):
+        return str(path)
+    else:
+        dirs = glob.glob(f"{path}*")
+        matches = [re.search(rf"%s(\d+)" % path.stem, d) for d in dirs]
+        i = [int(m.groups()[0]) for m in matches if m]
+        n = max(i) + 1 if i else 2
+        return f"{path}{n}"
+
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
