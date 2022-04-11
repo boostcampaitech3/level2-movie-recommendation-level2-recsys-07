@@ -11,6 +11,8 @@ from loss import *
 from model import *
 from utils import *
 
+from utils import fix_random_seed, increment_path, random_neg, dotdict
+
 # mlflow setting
 def mlflow_set():
     return
@@ -23,6 +25,9 @@ def train(model, criterion, optimizer, is_VAE = False):
     global update_count
 
     np.random.shuffle(idxlist)
+
+    save_dir,n = increment_path(os.path.join('./exp/', args.name))
+    os.makedirs(save_dir)
     
     for batch_idx, start_idx in enumerate(range(0, N, args.batch_size)): # 0 ~ 총 데이터 개수까지 batch size만큼 잘라서 indexing
         end_idx = min(start_idx + args.batch_size, N) # 총 데이터 개수를 넘지 않게 min 
@@ -139,7 +144,7 @@ if __name__ == '__main__':
                         help='weight decay coefficient')
     parser.add_argument('--batch_size', type=int, default=500,
                         help='batch size')
-    parser.add_argument('--epochs', type=int, default=200,
+    parser.add_argument('--epochs', type=int, default=20,
                         help='upper epoch limit')
     parser.add_argument('--total_anneal_steps', type=int, default=200000,
                         help='the total number of gradient updates for annealing')
@@ -155,13 +160,13 @@ if __name__ == '__main__':
                         help='path to save the final model')
     parser.add_argument('--patience', type=str, default=10,
                         help='Early Stopping에 들어갈 patience')
-    parser.add_argument('--checkpoint_path', type=str, default='/opt/ml/level2-movie-recommendation-level2-recsys-07/MODELS/CF/Mult-VAE/output/"',
+    parser.add_argument('--checkpoint_path', type=str, default='./exp/',
                         help='Early Stopping에 들어갈 patience')
-    parser.add_argument("--output_dir", default="/opt/ml/level2-movie-recommendation-level2-recsys-07/MODELS/CF/Mult-VAE/output/", type=str)
+    parser.add_argument("--output_dir", default="./output/", type=str) #submission
 
     args = parser.parse_args([])
 
-    args.checkpoint_path = os.path.join(args.output_dir, "Mult_VAE.pt")
+    args.checkpoint_path = os.path.join(args.output_dir, f"Mult_VAE.pt")
     # Set the random seed manually for reproductibility.
     torch.manual_seed(args.seed)
 
