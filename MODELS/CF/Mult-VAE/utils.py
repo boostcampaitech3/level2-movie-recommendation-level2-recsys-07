@@ -64,7 +64,7 @@ def increment_path(path):
         matches = [re.search(rf"%s(\d+)" % path.stem, d) for d in dirs]
         i = [int(m.groups()[0]) for m in matches if m]
         n = max(i) + 1 if i else 2
-        return f"{path}{n}", n
+        return f"{path}{n}"
 
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
