@@ -376,8 +376,7 @@ if __name__ == '__main__':
         #         # model.load_state_dict(torch.load('checkpoint.pt'))
 
         # Load the best saved model.
-        with open(args.save, 'rb') as f:
-            model = torch.load(args.checkpoint_path)
+        model = torch.load(args.checkpoint_path)
 
         # Run on test data.
         test_loss, n100, r20, r50 = evaluate(model, criterion, test_data_tr, test_data_te, is_VAE=True)
