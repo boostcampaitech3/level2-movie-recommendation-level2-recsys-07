@@ -20,26 +20,21 @@ def metrics(model, test_loader, top_k):
 
 	for user, item_i, item_j in test_loader:
 		user = user.cuda()
-		item_i = item_i.cuda()
+		item_i = item_i.cuda() # 무작위 100개 
 		item_j = item_j.cuda() # not useful when testing
 
-		print ("--- item_i 1")
-		print (item_i)
+		# print ("--- item_i 1")
+		# print (item_i)
   
 		prediction_i, prediction_j = model(user, item_i, item_j)
+  
+		# print ("Prediction_i.shape", prediction_i.shape)
 		_, indices = torch.topk(prediction_i, top_k)
-  
-		print ("heap")
-  
-		print ("--- item_i")
-		print (item_i)
-  
-		print ("--- indices")
-		print (indices)
-  
+		# print ("TOP k finished")
+    
 		recommends = torch.take(
 				item_i, indices).cpu().numpy().tolist()
-
+  
 		gt_item = item_i[0].item()
 		HR.append(hit(gt_item, recommends))
 		NDCG.append(ndcg(gt_item, recommends))

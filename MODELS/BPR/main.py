@@ -40,7 +40,7 @@ parser.add_argument("--top_k",
 	help="compute metrics@top_k")
 parser.add_argument("--factor_num", 
 	type=int,
-	default=32, 
+	default=16, 
 	help="predictive factors numbers in the model")
 parser.add_argument("--num_ng", 
 	type=int,
@@ -74,12 +74,13 @@ test_dataset = data_utils.BPRData(
 train_loader = data.DataLoader(train_dataset,
 		batch_size=args.batch_size, shuffle=True, num_workers=4)
 test_loader = data.DataLoader(test_dataset,
-		batch_size=args.test_num_ng+1, shuffle=False, num_workers=0)
+		batch_size=args.test_num_ng + 1, shuffle=False, num_workers=4)
 print ("Data loader all loaded!")
 
 ########################### CREATE MODEL #################################
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
 model = model.BPR(user_num, item_num, args.factor_num)
-model.cuda()
+model = model.to(device)
 print ("Model loaded!")
 
 optimizer = optim.SGD(
@@ -110,19 +111,18 @@ for epoch in range(args.epochs):
         count += 1
 	
     model.eval()
-    HR, NDCG = evaluate.metrics(model, test_loader, args.top_k)
-    
-    elapsed_time = time.time() - start_time
-    print("The time elapse of epoch {:03d}".format(epoch) + " is: " + 
-			time.strftime("%H: %M: %S", time.gmtime(elapsed_time)))
-    print("HR: {:.3f}\tNDCG: {:.3f}".format(np.mean(HR), np.mean(NDCG)))
-    
-    if HR > best_hr:
-        best_hr, best_ndcg, best_epoch = HR, NDCG, epoch
-        if args.out:
-            if not os.path.exists(config.model_path):
-                os.mkdir(config.model_path)
-            torch.save(model, '{}BPR.pt'.format(config.model_path))
+    with torch.no_grad():
+        HR, NDCG = evaluate.metrics(model, test_loader, args.top_k)
+        elapsed_time = time.time() - start_time
+        print("The time elapse of epoch {:03d}".format(epoch) + " is: " + 
+				time.strftime("%H: %M: %S", time.gmtime(elapsed_time)))
+        print("HR: {:.3f}\tNDCG: {:.3f}".format(np.mean(HR), np.mean(NDCG)))
+        if HR > best_hr:
+            best_hr, best_ndcg, best_epoch = HR, NDCG, epoch
+            if args.out:
+                if not os.path.exists(config.model_path):
+                    os.mkdir(config.model_path)
+                torch.save(model, '{}BPR.pt'.format(config.model_path))
 
 print("End. Best epoch {:03d}: HR = {:.3f}, \
 	NDCG = {:.3f}".format(best_epoch, best_hr, best_ndcg))
