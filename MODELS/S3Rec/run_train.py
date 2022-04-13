@@ -67,7 +67,7 @@ def main():
     )
     parser.add_argument("--gpu_id", type=str, default="0", help="gpu_id")
 
-    parser.add_argument("--using_pretrain", action="store_false")
+    parser.add_argument("--using_pretrain", action="store_true")
 
     args = parser.parse_args()
 
