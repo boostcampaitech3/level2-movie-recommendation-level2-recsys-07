@@ -215,11 +215,20 @@ def get_user_seqs_long(data_file):
 
 def get_item2attribute_json(data_file):
     item2attribute = json.loads(open(data_file).readline())
-    attribute_set = set()
+    # attribute_set = set()
+    # for item, attributes in item2attribute.items():
+    #     attribute_set = attribute_set | set(attributes)
+    # attribute_size = max(attribute_set)
+
+    attribute_genre = set()
+    attribute_writer = set()
     for item, attributes in item2attribute.items():
-        attribute_set = attribute_set | set(attributes)
-    attribute_size = max(attribute_set)
-    return item2attribute, attribute_size
+        attribute_genre = attribute_genre | set(attributes[0])
+        attribute_writer = attribute_writer | set(attributes[1])
+    attribute_genre_size = max(attribute_genre)
+    attribute_writer_size = max(attribute_writer)
+
+    return item2attribute, attribute_genre_size, attribute_writer_size
 
 
 def get_metric(pred_list, topk=10):

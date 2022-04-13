@@ -97,18 +97,25 @@ class PretrainDataset(Dataset):
 
         # Associated Attribute Prediction
         # Masked Attribute Prediction
-        attributes = []
+        attributes_genre = [] # 50 x 17
+        attributes_writer = [] # 50 x 2989
         for item in pos_items:
-            attribute = [0] * self.args.attribute_size
+            attribute_genre = [0] * self.args.attribute_size
+            attribute_writer = [0] * self.args.attribute_size2
             try:
-                now_attribute = self.args.item2attribute[str(item)]
-                for a in now_attribute:
-                    attribute[a] = 1
+                now_attribute = self.args.item2attribute[str(item)] # [[genre], [writer]]
+                for a in now_attribute[0]: # genre
+                    attribute_genre[a] = 1
+                for b in now_attribute[1]: # writer
+                    attribute_writer[b] = 1
             except:
                 pass
-            attributes.append(attribute)
+            attributes_genre.append(attribute_genre)
+            attributes_writer.append(attribute_writer)
+            
 
-        assert len(attributes) == self.max_len
+        assert len(attributes_genre) == self.max_len
+        assert len(attributes_writer) == self.max_len 
         assert len(masked_item_sequence) == self.max_len
         assert len(pos_items) == self.max_len
         assert len(neg_items) == self.max_len
@@ -117,7 +124,8 @@ class PretrainDataset(Dataset):
         assert len(neg_segment) == self.max_len
 
         cur_tensors = (
-            torch.tensor(attributes, dtype=torch.long),
+            torch.tensor(attributes_genre, dtype=torch.long),
+            torch.tensor(attributes_writer, dtype=torch.long),
             torch.tensor(masked_item_sequence, dtype=torch.long),
             torch.tensor(pos_items, dtype=torch.long),
             torch.tensor(neg_items, dtype=torch.long),

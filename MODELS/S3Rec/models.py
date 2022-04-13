@@ -10,8 +10,11 @@ class S3RecModel(nn.Module):
         self.item_embeddings = nn.Embedding(
             args.item_size, args.hidden_size, padding_idx=0
         )
-        self.attribute_embeddings = nn.Embedding(
+        self.attribute_embeddings = nn.Embedding(   # genre embedding
             args.attribute_size, args.hidden_size, padding_idx=0
+        )
+        self.attribute_embeddings2 = nn.Embedding(  # writer embedding
+            args.attribute_size2, args.hidden_size, padding_idx=0
         )
         self.position_embeddings = nn.Embedding(args.max_seq_length, args.hidden_size)
         self.item_encoder = Encoder(args)
@@ -31,7 +34,7 @@ class S3RecModel(nn.Module):
     def associated_attribute_prediction(self, sequence_output, attribute_embedding):
         """
         :param sequence_output: [B L H]
-        :param attribute_embedding: [arribute_num H]
+        :param attribute_embedding: [2 arribute_num H]
         :return: scores [B*L tag_num]
         """
         sequence_output = self.aap_norm(sequence_output)  # [B L H]
@@ -39,6 +42,7 @@ class S3RecModel(nn.Module):
             [-1, self.args.hidden_size, 1]
         )  # [B*L H 1]
         # [tag_num H] [B*L H 1] -> [B*L tag_num 1]
+
         score = torch.matmul(attribute_embedding, sequence_output)
         return torch.sigmoid(score.squeeze(-1))  # [B*L tag_num]
 
@@ -79,7 +83,9 @@ class S3RecModel(nn.Module):
 
     #
     def add_position_embedding(self, sequence):
-
+        '''
+        :parm sequence: [B L]  ex) [256, 50]
+        '''
         seq_length = sequence.size(1)
         position_ids = torch.arange(
             seq_length, dtype=torch.long, device=sequence.device
@@ -95,7 +101,8 @@ class S3RecModel(nn.Module):
 
     def pretrain(
         self,
-        attributes,
+        attributes_genre,
+        attributes_writer,
         masked_item_sequence,
         pos_items,
         neg_items,
@@ -116,19 +123,34 @@ class S3RecModel(nn.Module):
         # [B L H]
         sequence_output = encoded_layers[-1]
 
-        attribute_embeddings = self.attribute_embeddings.weight
+        attribute_embeddings = self.attribute_embeddings.weight # genre
+        attribute_embeddings2 = self.attribute_embeddings2.weight # writer
+
         # AAP
-        aap_score = self.associated_attribute_prediction(
+        # -- Genre loss
+        aap_score_genre = self.associated_attribute_prediction(
             sequence_output, attribute_embeddings
         )
-        aap_loss = self.criterion(
-            aap_score, attributes.view(-1, self.args.attribute_size).float()
+        aap_loss_genre = self.criterion(
+            aap_score_genre, attributes_genre.view(-1, self.args.attribute_size).float()
         )
+
+        # -- Writer loss
+        aap_score_writer = self.associated_attribute_prediction(
+            sequence_output, attribute_embeddings2
+        )
+        aap_loss_writer = self.criterion(
+            aap_score_writer, attributes_writer.view(-1, self.args.attribute_size2).float()
+        )
+
         # only compute loss at non-masked position
         aap_mask = (masked_item_sequence != self.args.mask_id).float() * (
             masked_item_sequence != 0
         ).float()
-        aap_loss = torch.sum(aap_loss * aap_mask.flatten().unsqueeze(-1))
+        aap_loss_genre = torch.sum(aap_loss_genre * aap_mask.flatten().unsqueeze(-1))
+        aap_loss_writer = torch.sum(aap_loss_writer * aap_mask.flatten().unsqueeze(-1))
+
+        aap_loss = aap_loss_genre + aap_loss_writer
 
         # MIP
         pos_item_embs = self.item_embeddings(pos_items)
@@ -143,14 +165,27 @@ class S3RecModel(nn.Module):
         mip_loss = torch.sum(mip_loss * mip_mask.flatten())
 
         # MAP
-        map_score = self.masked_attribute_prediction(
+        # -- Genre loss
+        map_score_genre = self.masked_attribute_prediction(
             sequence_output, attribute_embeddings
         )
-        map_loss = self.criterion(
-            map_score, attributes.view(-1, self.args.attribute_size).float()
+        map_loss_genre = self.criterion(
+            map_score_genre, attributes_genre.view(-1, self.args.attribute_size).float()
         )
+
+        # -- Writer loss
+        map_score_writer = self.masked_attribute_prediction(
+            sequence_output, attribute_embeddings2
+        )
+        map_loss_writer = self.criterion(
+            map_score_writer, attributes_writer.view(-1, self.args.attribute_size2).float()
+        )
+
         map_mask = (masked_item_sequence == self.args.mask_id).float()
-        map_loss = torch.sum(map_loss * map_mask.flatten().unsqueeze(-1))
+        map_loss_genre = torch.sum(map_loss_genre * map_mask.flatten().unsqueeze(-1))
+        map_loss_writer = torch.sum(map_loss_writer * map_mask.flatten().unsqueeze(-1))
+
+        map_loss = map_loss_genre + map_loss_writer
 
         # SP
         # segment context
@@ -215,15 +250,15 @@ class S3RecModel(nn.Module):
         extended_attention_mask = extended_attention_mask.to(
             dtype=next(self.parameters()).dtype
         )  # fp16 compatibility
-        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
+        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0  # [B 1 L L]
 
-        sequence_emb = self.add_position_embedding(input_ids)
+        sequence_emb = self.add_position_embedding(input_ids)  # [B L H]
 
         item_encoded_layers = self.item_encoder(
             sequence_emb, extended_attention_mask, output_all_encoded_layers=True
         )
 
-        sequence_output = item_encoded_layers[-1]
+        sequence_output = item_encoded_layers[-1]  # [B L H] ex) [256, 50, 64]
         return sequence_output
 
     def init_weights(self, module):

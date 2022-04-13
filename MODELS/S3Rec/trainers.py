@@ -104,9 +104,9 @@ class Trainer:
 
     def predict_full(self, seq_out):
         # [item_num hidden_size]
-        test_item_emb = self.model.item_embeddings.weight
+        test_item_emb = self.model.item_embeddings.weight  # [119147, 64]
         # [batch hidden_size ]
-        rating_pred = torch.matmul(seq_out, test_item_emb.transpose(0, 1))
+        rating_pred = torch.matmul(seq_out, test_item_emb.transpose(0, 1))  # [256, 119147]
         return rating_pred
 
 
@@ -155,7 +155,8 @@ class PretrainTrainer(Trainer):
             # 0. batch_data will be sent into the device(GPU or CPU)
             batch = tuple(t.to(self.device) for t in batch)
             (
-                attributes,
+                attributes_genre,
+                attributes_writer,
                 masked_item_sequence,
                 pos_items,
                 neg_items,
@@ -165,7 +166,8 @@ class PretrainTrainer(Trainer):
             ) = batch
 
             aap_loss, mip_loss, map_loss, sp_loss = self.model.pretrain(
-                attributes,
+                attributes_genre,
+                attributes_writer,
                 masked_item_sequence,
                 pos_items,
                 neg_items,
@@ -175,7 +177,7 @@ class PretrainTrainer(Trainer):
             )
 
             joint_loss = (
-                self.aap_weight * aap_loss
+                self.args.aap_weight * aap_loss
                 + self.args.mip_weight * mip_loss
                 + self.args.map_weight * map_loss
                 + self.args.sp_weight * sp_loss
@@ -242,7 +244,7 @@ class FinetuneTrainer(Trainer):
                 batch = tuple(t.to(self.device) for t in batch)
                 _, input_ids, target_pos, target_neg, _ = batch
                 # Binary cross_entropy
-                sequence_output = self.model.finetune(input_ids)
+                sequence_output = self.model.finetune(input_ids)  # [B L H]
                 loss = self.cross_entropy(sequence_output, target_pos, target_neg)
                 self.optim.zero_grad()
                 loss.backward()
@@ -269,9 +271,9 @@ class FinetuneTrainer(Trainer):
 
                 batch = tuple(t.to(self.device) for t in batch)
                 user_ids, input_ids, _, target_neg, answers = batch
-                recommend_output = self.model.finetune(input_ids)
+                recommend_output = self.model.finetune(input_ids)  # [B L H]
 
-                recommend_output = recommend_output[:, -1, :]
+                recommend_output = recommend_output[:, -1, :]      # [B H]  ex) [256, 64]
 
                 rating_pred = self.predict_full(recommend_output)
 
@@ -281,17 +283,17 @@ class FinetuneTrainer(Trainer):
 
                 ind = np.argpartition(rating_pred, -10)[:, -10:]
 
-                arr_ind = rating_pred[np.arange(len(rating_pred))[:, None], ind]
+                arr_ind = rating_pred[np.arange(len(rating_pred))[:, None], ind] # [256, 10]
 
                 arr_ind_argsort = np.argsort(arr_ind)[np.arange(len(rating_pred)), ::-1]
 
                 batch_pred_list = ind[
                     np.arange(len(rating_pred))[:, None], arr_ind_argsort
-                ]
+                ]  # [256, 10]
 
                 if i == 0:
-                    pred_list = batch_pred_list
-                    answer_list = answers.cpu().data.numpy()
+                    pred_list = batch_pred_list                 # [256, 10]
+                    answer_list = answers.cpu().data.numpy()    # [256]
                 else:
                     pred_list = np.append(pred_list, batch_pred_list, axis=0)
                     answer_list = np.append(

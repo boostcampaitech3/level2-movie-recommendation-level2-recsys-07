@@ -22,7 +22,7 @@ def main():
 
     parser.add_argument("--data_dir", default="/opt/ml/level2-movie-recommendation-level2-recsys-07/MODELS/S3Rec/data/train", type=str)
     parser.add_argument("--output_dir", default="./output/", type=str)
-    parser.add_argument("--data_name", default="Ml", type=str)
+    parser.add_argument("--data_name", default="genre_writer", type=str)
 
     # model args
     parser.add_argument("--model_name", default="Pretrain", type=str)
@@ -85,22 +85,23 @@ def main():
     set_seed(args.seed)
     check_path(args.output_dir)
 
-    args.checkpoint_path = os.path.join(args.output_dir, "Pretrain.pt")
+    args.checkpoint_path = os.path.join(args.output_dir, f"Pretrain_{args.data_name}.pt")
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
     args.cuda_condition = torch.cuda.is_available() and not args.no_cuda
 
     # args.data_file = args.data_dir + args.data_name + '.txt'
     args.data_file = os.path.join(args.data_dir, "train_ratings.csv")
-    item2attribute_file = os.path.join(args.data_dir, args.data_name+"_item2attributes.json")
+    item2attribute_file = os.path.join(args.data_dir, f"{args.data_name}_item2attributes.json")
     # concat all user_seq get a long sequence, from which sample neg segment for SP
     user_seq, max_item, long_sequence = get_user_seqs_long(args.data_file)
 
-    item2attribute, attribute_size = get_item2attribute_json(item2attribute_file)
+    item2attribute, attribute_genre_size, attribute_writer_size = get_item2attribute_json(item2attribute_file)
 
     args.item_size = max_item + 2
     args.mask_id = max_item + 1
-    args.attribute_size = attribute_size + 1
+    args.attribute_size = attribute_genre_size + 1
+    args.attribute_size2 = attribute_writer_size + 1
 
     args.item2attribute = item2attribute
 
