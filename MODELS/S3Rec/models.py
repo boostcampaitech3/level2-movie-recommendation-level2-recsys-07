@@ -83,7 +83,9 @@ class S3RecModel(nn.Module):
 
     #
     def add_position_embedding(self, sequence):
-
+        '''
+        :parm sequence: [B L]  ex) [256, 50]
+        '''
         seq_length = sequence.size(1)
         position_ids = torch.arange(
             seq_length, dtype=torch.long, device=sequence.device
@@ -248,15 +250,15 @@ class S3RecModel(nn.Module):
         extended_attention_mask = extended_attention_mask.to(
             dtype=next(self.parameters()).dtype
         )  # fp16 compatibility
-        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
+        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0  # [B 1 L L]
 
-        sequence_emb = self.add_position_embedding(input_ids)
+        sequence_emb = self.add_position_embedding(input_ids)  # [B L H]
 
         item_encoded_layers = self.item_encoder(
             sequence_emb, extended_attention_mask, output_all_encoded_layers=True
         )
 
-        sequence_output = item_encoded_layers[-1]
+        sequence_output = item_encoded_layers[-1]  # [B L H] ex) [256, 50, 64]
         return sequence_output
 
     def init_weights(self, module):
