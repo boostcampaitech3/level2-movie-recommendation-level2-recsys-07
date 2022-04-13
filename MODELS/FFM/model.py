@@ -78,7 +78,7 @@ class FieldAwareFM(nn.Module):
             y: Float tensor of size "(batch_size)"
         '''
         x = x + x.new_tensor(self.encoding_dims).unsqueeze(0)
-        x_multihot = torch.zeros(x.size(0), self.input_dim, device=device).to(self.device).scatter_(1, x, 1.)
+        x_multihot = torch.zeros(x.size(0), self.input_dim, device=self.device).scatter_(1, x, 1.)
         
         y = self.linear(x_multihot).squeeze(1) + self.ffm(x)
 
