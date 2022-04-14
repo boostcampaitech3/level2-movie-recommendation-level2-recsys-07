@@ -114,13 +114,14 @@ def train(args):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     #-- dataset
-    rating_df = pd.read_csv(os.path.join(args.data_dir, 'rating.csv'))
+    #rating_df = pd.read_csv(os.path.join(args.data_dir, 'rating.csv'))
 
-    attr_path = os.path.join(args.data_dir, (args.attr_csv + '.csv'))
-    attr_df = pd.read_csv(attr_path) 
+    #attr_path = os.path.join(args.data_dir, (args.attr_csv + '.csv'))
+    #attr_df = pd.read_csv(attr_path) 
 
-    dataset_module = getattr(import_module("datasets"), args.dataset)
-    dataset = dataset_module(args, rating_df, attr_df) # TODO
+    #dataset_module = getattr(import_module("datasets"), args.dataset)
+    dataset = TrainDataset("rating_gener_writer_director_df_100_simple.csv")
+    
     print (f"[DEBUG] DataSet has been loaded")
 
     # train_loader, valid_loader
@@ -135,7 +136,6 @@ def train(args):
         num_workers = multiprocessing.cpu_count()//2,
         pin_memory=use_cuda,
         drop_last=False,
-        # TODO : sampler
         )
     
     valid_loader = DataLoader(valid_dataset, 
@@ -144,28 +144,20 @@ def train(args):
         num_workers = multiprocessing.cpu_count()//2,
         pin_memory=use_cuda,
         drop_last=False,
-        # TODO : samplers
         )
+    
     print (f"[DEBUG] DataLoader has been loaded")
 
     #-- model
-    # for input dimention setting 
-    n_users = dataset.get_users()
-    n_items = dataset.get_items()
-    n_attributes1 = dataset.get_attributes1()
-    n_attributes2 = dataset.get_attributes2()
-    print (f"[DEBUG] n_users = {n_users}, n_items = {n_items}, n_attributes1 = {n_attributes1}, n_attributes2 = {n_attributes2}")
-
-    input_dims = [n_users,n_items,n_attributes1, n_attributes2]
+    #model_module = getattr(import_module("models"), args.model)
+    
+    input_dims = dataset.input_dims
     emb_dim = args.embedding_dim # default 10
 
-    model_module = getattr(import_module("models"), args.model)
-    model = model_module( #TODO : DeepFM Setting -> Generalized Setting
-        args = args,
-        input_dims = input_dims, 
-        embedding_dim = emb_dim,
-        mlp_dims = [30,20,10],
-    ).to(device)
+    model = DeepFM(args,
+           input_dims = input_dims, 
+           embedding_dim = emb_dim,
+           mlp_dims = [30,20,10]).to(device)
 
     model = torch.nn.DataParallel(model)
     print (f"[DEBUG] Model has been loaded")
@@ -274,7 +266,7 @@ def train(args):
                 
                 if val_loss < best_val_loss:
                     print(f"New best model for val loss : {val_loss:4.2%}! saving the best model..")
-                    torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
+                    torch.save(model, f"{save_dir}/best.pth")
                     best_val_acc = val_acc
                     best_val_loss = val_loss
                     stop_counter = 0
@@ -302,7 +294,8 @@ def train(args):
                     print("Early stopping")
                     break
         
-        torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
+        torch.save(model, f"{save_dir}/last.pth")
+        
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
