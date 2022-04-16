@@ -9,3 +9,4 @@ exp
 *.tsv
 *.json
 *.pkl
+*.pt
