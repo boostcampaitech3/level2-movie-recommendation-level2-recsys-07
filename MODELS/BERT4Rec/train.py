@@ -19,7 +19,7 @@ from model import BERT4Rec
 import mlflow
 
 EXPRIMENT_NAME = "Bert4Rec"
-TRACKiNG_URI = "http://34.105.0.176:5000/"#"http://34.105.0.176:5000/"
+TRACKiNG_URI = "http://34.105.0.176:5000/" #"http://34.105.0.176:5000/"
 
 def train(args):
     
@@ -100,7 +100,7 @@ def train(args):
     mlflow.set_tracking_uri(TRACKiNG_URI)
     mlflow.set_experiment(EXPRIMENT_NAME)
     #-- mlflow setting
-    with mlflow.start_run() as run:
+    with mlflow.start_run(run_name= args.name) as run:
         mlflow.log_params(save_param)                  # save params
         mlflow.log_artifact(f"{save_dir}/config.yaml") # config.yaml save
         #-- Start Train
@@ -181,7 +181,7 @@ def train(args):
                     f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:.5f}"
                 )
 
-                print (f"Epoch: {epoch + 1}, valid_acc : {valid_acc: 4.2%}, valid_loss_avg :{valid_loss_avg: .5f}")
+                #print (f"Epoch: {epoch + 1}, valid_acc : {valid_acc: 4.2%}, valid_loss_avg :{valid_loss_avg: .5f}")
 
                 #-- [MLflow] mlflow valid metrics logging
                 mlflow.log_metrics({
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
     # config option
-    parser.add_argument('--config', type=bool, default=False, help = 'using config using option')
+    parser.add_argument('--config', type=bool, default=True, help = 'using config using option')
 
     #-- DataSet Arguments
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')

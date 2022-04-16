@@ -1,3 +1,4 @@
+import enum
 from .utils import *
 from config import RAW_DATASET_ROOT_FOLDER
 
@@ -71,13 +72,16 @@ class AbstractDataset(metaclass=ABCMeta):
         df = self.load_ratings_df()
         df = self.make_implicit(df)
         df = self.filter_triplets(df)
-        df, umap, smap = self.densify_index(df)
-        train, val, test = self.split_df(df, len(umap))
+        df, umap, smap, de_umap, de_smap = self.densify_index(df)
+        train, val, test, infer = self.split_df(df, len(umap))
         dataset = {'train': train,
                    'val': val,
                    'test': test,
+                   'infer': infer,
                    'umap': umap,
-                   'smap': smap}
+                   'smap': smap,
+                   'decode_user': de_umap,
+                   'decode_item': de_smap}
         with dataset_path.open('wb') as f:
             pickle.dump(dataset, f)
 
@@ -132,20 +136,22 @@ class AbstractDataset(metaclass=ABCMeta):
         print('Densifying index')
         umap = {u: i for i, u in enumerate(set(df['uid']))}
         smap = {s: i for i, s in enumerate(set(df['sid']))}
+        decode_user = {i: u for i, u in enumerate(set(df['uid']))}
+        decode_item = {i: s for i, s in enumerate(set(df['sid']))}
         df['uid'] = df['uid'].map(umap)
         df['sid'] = df['sid'].map(smap)
-        return df, umap, smap
+        return df, umap, smap, decode_user, decode_item
 
     def split_df(self, df, user_count):
         if self.args.split == 'leave_one_out':
             print('Splitting')
             user_group = df.groupby('uid')
             user2items = user_group.progress_apply(lambda d: list(d.sort_values(by='timestamp')['sid']))
-            train, val, test = {}, {}, {}
+            train, val, test, infer = {}, {}, {}, {}
             for user in range(user_count):
                 items = user2items[user]
-                train[user], val[user], test[user] = items[:-2], items[-2:-1], items[-1:]
-            return train, val, test
+                train[user], val[user], test[user], infer[user] = items[:-2], items[-2:-1], items[-1:], items[:]
+            return train, val, test, infer
         elif self.args.split == 'holdout':
             print('Splitting')
             np.random.seed(self.args.dataset_split_seed)

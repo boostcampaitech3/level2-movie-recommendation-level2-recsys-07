@@ -1,4 +1,5 @@
 import argparse
+import yaml
 import time
 import torch
 import torch.nn as nn
@@ -9,10 +10,17 @@ from dataset import *
 from dataloader import *
 from loss import *
 from model import *
+from utils import *
+
+import mlflow
+
+EXPRIMENT_NAME = "Multi-VAE"
+TRACKiNG_URI = "http://34.105.0.176:5000/" #"http://34.105.0.176:5000/"
 
 # mlflow setting
 def mlflow_set():
-    return
+    mlflow.set_tracking_uri(TRACKiNG_URI)
+    mlflow.set_experiment(EXPRIMENT_NAME)
 
 def train(model, criterion, optimizer, is_VAE = False):
     # Turn on training mode
@@ -22,7 +30,7 @@ def train(model, criterion, optimizer, is_VAE = False):
     global update_count
 
     np.random.shuffle(idxlist)
-    
+
     for batch_idx, start_idx in enumerate(range(0, N, args.batch_size)): # 0 ~ 총 데이터 개수까지 batch size만큼 잘라서 indexing
         end_idx = min(start_idx + args.batch_size, N) # 총 데이터 개수를 넘지 않게 min 
         data = train_data[idxlist[start_idx:end_idx]] 
@@ -66,7 +74,6 @@ def train(model, criterion, optimizer, is_VAE = False):
             start_time = time.time()
             train_loss = 0.0
 
-
 def evaluate(model, criterion, data_tr, data_te, is_VAE=False):
     # Turn on evaluation mode
     model.eval()
@@ -84,9 +91,10 @@ def evaluate(model, criterion, data_tr, data_te, is_VAE=False):
             data = data_tr[e_idxlist[start_idx:end_idx]] # TODO : data_tr, data_te의 총 개수가 다르지 않은가? 똑같이 indexing하면 index error 발생 안하나?
             heldout_data = data_te[e_idxlist[start_idx:end_idx]]
             # TODO : 왜 data_tr, data_te 모두 길이가 3000인가?
+            # data_tr.shape (3000,6807)
 
             data_tensor = naive_sparse2tensor(data).to(device)
-
+            # print('data[0]',data_tensor[0].cpu().detach().numpy())
             if is_VAE :
               
               if args.total_anneal_steps > 0:
@@ -106,11 +114,11 @@ def evaluate(model, criterion, data_tr, data_te, is_VAE=False):
             total_loss += loss.item()
 
             # Exclude examples from training set
-            recon_batch = recon_batch.cpu().numpy()
+            recon_batch = recon_batch.cpu().numpy() # probability # valid userindex :26554 = id 14
             recon_batch[data.nonzero()] = -np.inf
 
             n100 = NDCG_binary_at_k_batch(recon_batch, heldout_data, 100)
-            r20 = Recall_at_k_batch(recon_batch, heldout_data, 10)
+            r20 = Recall_at_k_batch(recon_batch, heldout_data, 10) # heldout_data : 정답
             r50 = Recall_at_k_batch(recon_batch, heldout_data, 50)
             n100_list.append(n100)
             r20_list.append(r20)
@@ -129,9 +137,11 @@ if __name__ == '__main__':
     ## 각종 파라미터 세팅
     parser = argparse.ArgumentParser(description='PyTorch Variational Autoencoders for Collaborative Filtering')
 
+    # config option
+    parser.add_argument('--config', type=bool, default=True, help = 'using config using option')
+
     parser.add_argument('--data', type=str, default='/opt/ml/input/data/train/',
                         help='Movielens dataset location')
-
     parser.add_argument('--lr', type=float, default=1e-4,
                         help='initial learning rate')
     parser.add_argument('--wd', type=float, default=0.00,
@@ -150,12 +160,30 @@ if __name__ == '__main__':
                         help='use CUDA')
     parser.add_argument('--log_interval', type=int, default=100, metavar='N',
                         help='report interval')
-    parser.add_argument('--save', type=str, default='model.pt',
-                        help='path to save the final model')
+    parser.add_argument('--patience', type=str, default=10,
+                        help='Early Stopping에 들어갈 patience')
+    parser.add_argument('--checkpoint_path', type=str, default='Multi_VAE.pth',
+                        help='Early Stopping에 들어갈 patience')
+    parser.add_argument('--name', type=str, default='experiment', 
+                        help='model save at ./exp/{name}')
+    
     args = parser.parse_args([])
 
+    #-- load config.yaml
+    if args.config == True:
+        print("Using config.yaml option")
+        with open('./config.yaml') as f: #set config.yml path
+            config = yaml.safe_load(f)
+        args = dotdict(config)
+    
+    #-- save directory setting
+    save_dir = increment_path(os.path.join('./exp/', args.name))
+    os.makedirs(save_dir)
+    
+    #-- check point file path
+    args.checkpoint_path = os.path.join(save_dir,  args.checkpoint_path)
 
-    # Set the random seed manually for reproductibility.
+    # -- Set the random seed manually for reproductibility.
     torch.manual_seed(args.seed)
 
     #만약 GPU가 사용가능한 환경이라면 GPU를 사용
@@ -168,6 +196,16 @@ if __name__ == '__main__':
     print(args)
 
     ###################
+    # Save current argument
+    with open(os.path.join(save_dir, 'config.yaml'), 'w') as yaml_file:
+        if(type(args) == dotdict):
+            save_param = dict(args)
+        else:
+            save_param = vars(args)
+        yaml.dump(save_param, yaml_file, default_flow_style=False)
+
+    ###################
+    
     print("Load and Preprocess Movielens dataset")
     # Load Data
     DATA_DIR = args.data
@@ -248,9 +286,11 @@ if __name__ == '__main__':
 
     # 총 495,925개의 (user_index, item_index) instance
     vad_data_tr = numerize(vad_plays_tr, profile2id, show2id) 
+
     vad_data_tr.to_csv(os.path.join(pro_dir, 'validation_tr.csv'), index=False)
 
     vad_data_te = numerize(vad_plays_te, profile2id, show2id)
+
     vad_data_te.to_csv(os.path.join(pro_dir, 'validation_te.csv'), index=False)
 
     # 총 489,948개의 (user_index, item_index) instance
@@ -266,10 +306,9 @@ if __name__ == '__main__':
     ###############################################################################
     # Load data
     ###############################################################################
-
     loader = DataLoader(args.data)
 
-    n_items = loader.load_n_items()
+    n_items = loader.load_n_items() # train에 속한 item id의 갯수 =6807
     train_data = loader.load_data('train') # "(user_index, item_index) 1" 형식의 instance 모음 (index 값을 기준으로 정렬되어 있다)
     vad_data_tr, vad_data_te = loader.load_data('validation') # "(user_index, item_index) 1" 형식의 instance 모음 (index 값을 기준으로 정렬되어 있다)
     test_data_tr, test_data_te = loader.load_data('test') # "(user_index, item_index) 1" 형식의 instance 모음 (index 값을 기준으로 정렬되어 있다)
@@ -280,8 +319,7 @@ if __name__ == '__main__':
     ###############################################################################
     # Build the model
     ###############################################################################
-
-    p_dims = [200, 600, n_items] 
+    p_dims = [200, 600, n_items]  #[200, 600, 6807]
     model = MultiVAE(p_dims).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=args.wd) # Multi VAE 모델은 weight decay = 0 사용하지 않음
@@ -290,39 +328,69 @@ if __name__ == '__main__':
     ###############################################################################
     # Training code
     ###############################################################################
+    
+    # Mlflow setting
+    
+    mlflow_set()
 
     best_n100 = -np.inf
     update_count = 0
+    early_stopping = EarlyStopping(args.checkpoint_path, patience=args.patience, verbose=True)
 
-    for epoch in range(1, args.epochs + 1):
-        epoch_start_time = time.time()
-        train(model, criterion, optimizer, is_VAE=True)
-        val_loss, n100, r20, r50 = evaluate(model, criterion, vad_data_tr, vad_data_te, is_VAE=True)
-        print('-' * 89)
-        print('| end of epoch {:3d} | time: {:4.2f}s | valid loss {:4.2f} | '
-                'n100 {:5.3f} | r20 {:5.3f} | r50 {:5.3f}'.format(
-                    epoch, time.time() - epoch_start_time, val_loss,
-                    n100, r20, r50))
-        print('-' * 89)
+    with mlflow.start_run(run_name= args.name) as run:
+        mlflow.log_params(save_param)
+        for epoch in range(1, args.epochs + 1):
+            epoch_start_time = time.time()
+            train(model, criterion, optimizer, is_VAE=True)
+            val_loss, n100, r20, r50 = evaluate(model, criterion, vad_data_tr, vad_data_te, is_VAE=True)
+            print('-' * 89)
+            print('| end of epoch {:3d} | time: {:4.2f}s | valid loss {:4.2f} | '
+                    'n100 {:5.3f} | r20 {:5.3f} | r50 {:5.3f}'.format(
+                        epoch, time.time() - epoch_start_time, val_loss,
+                        n100, r20, r50))
+            print('-' * 89)
 
-        n_iter = epoch * len(range(0, N, args.batch_size))
+            n_iter = epoch * len(range(0, N, args.batch_size))
 
+            #-- [Mlflow] mlflow valid metrics logging
+            mlflow.log_metrics({
+            "Valid/loss" : val_loss,
+            "Valid/n100" : n100,
+            "Valid/r50" : r50,
+            "Valid/r20" : r20,
+            })
+            
+            # # Save the model if the n100 is the best we've seen so far.
+            # if n100 > best_n100:
+            #     with open(args.save, 'wb') as f:
+            #         torch.save(model, f)
+            #     best_n100 = n100
 
-        # Save the model if the n100 is the best we've seen so far.
-        if n100 > best_n100:
-            with open(args.save, 'wb') as f:
-                torch.save(model, f)
-            best_n100 = n100
+            early_stopping(val_loss, model)
+            if early_stopping.early_stop:
+                print("Early stopping")
+                break
+        #     with open(args.save, 'wb') as f:
+        #         torch.save(torch.load(args.checkpoint_path), f)
+        #         # trainer.model.load_state_dict(torch.load(args.checkpoint_path))
+        #         # model.load_state_dict(torch.load('checkpoint.pt'))
 
+        # Load the best saved model.
+        model = torch.load(args.checkpoint_path)
 
+        # Run on test data.
+        test_loss, n100, r20, r50 = evaluate(model, criterion, test_data_tr, test_data_te, is_VAE=True)
+        print('=' * 89)
+        print('| End of training | test loss {:4.2f} | n100 {:4.2f} | r20 {:4.2f} | '
+                'r50 {:4.2f}'.format(test_loss, n100, r20, r50))
+        print('=' * 89)
 
-    # Load the best saved model.
-    with open(args.save, 'rb') as f:
-        model = torch.load(f)
-
-    # Run on test data.
-    test_loss, n100, r20, r50 = evaluate(model, criterion, test_data_tr, test_data_te, is_VAE=True)
-    print('=' * 89)
-    print('| End of training | test loss {:4.2f} | n100 {:4.2f} | r20 {:4.2f} | '
-            'r50 {:4.2f}'.format(test_loss, n100, r20, r50))
-    print('=' * 89)
+        #-- [Mlflow] mlflow test metrics logging
+        mlflow.log_metrics({
+            "Test/loss" : test_loss,
+            "Test/n100" : n100,
+            "Test/r50" : r50,
+            "Test/r20" : r20,
+        })
+        #-- [Mlflow] save artifacts
+        mlflow.log_artifacts(save_dir)
