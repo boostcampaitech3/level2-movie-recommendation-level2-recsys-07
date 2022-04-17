@@ -46,6 +46,10 @@ class DataLoader():
                                  shape=(n_users, self.n_items))
         # sparse matrix를 압축된 형태로 변경해준다. M x N sparse matrix -> 실제로 값이 0이 아닌 칸에 대해 (x, y) value 반환
         # row = user_index, col = item_index, value = 모든 값이 1인 vector
+        # print(data)   #  (0, 17)       1.0
+                        #  (0, 40)       1.0
+                        #  (0, 41)       1.0
+                        #  (0, 46)       1.0
         return data
     
     def _load_tr_te_data(self, datatype='test'):
@@ -64,7 +68,7 @@ class DataLoader():
         data_tr = sparse.csr_matrix((np.ones_like(rows_tr),
                                     (rows_tr, cols_tr)), dtype='float64', shape=(end_idx - start_idx + 1, self.n_items))
         data_te = sparse.csr_matrix((np.ones_like(rows_te),
-                                    (rows_te, cols_te)), dtype='float64', shape=(end_idx - start_idx + 1, self.n_items))
+                                    (rows_te, cols_te)), dtype='float64', shape=(end_idx - start_idx + 1, self.n_items))                      
         return data_tr, data_te
 
 def sparse2torch_sparse(data):

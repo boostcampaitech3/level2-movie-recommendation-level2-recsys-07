@@ -70,7 +70,7 @@ parser.add_argument('--momentum', type=float, default=0.01, help='SGD momentum')
 parser.add_argument('--decay_step', type=int, default=15, help='Decay step for StepLR')
 parser.add_argument('--gamma', type=float, default=0.1, help='Gamma for StepLR')
 # epochs #
-parser.add_argument('--num_epochs', type=int, default=100, help='Number of epochs for training')
+parser.add_argument('--num_epochs', type=int, default=5, help='Number of epochs for training')
 # logger #
 parser.add_argument('--log_period_as_iter', type=int, default=12800)
 # evaluation #

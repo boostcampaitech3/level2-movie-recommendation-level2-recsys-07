@@ -37,7 +37,8 @@ class BertDataloader(AbstractDataloader):
         train_loader = self._get_train_loader()
         val_loader = self._get_val_loader()
         test_loader = self._get_test_loader()
-        return train_loader, val_loader, test_loader
+        inference_loader = self._get_inference_loader()
+        return train_loader, val_loader, test_loader, inference_loader
 
     def _get_train_loader(self):
         dataset = self._get_train_dataset()
@@ -47,6 +48,15 @@ class BertDataloader(AbstractDataloader):
 
     def _get_train_dataset(self):
         dataset = BertTrainDataset(self.train, self.max_len, self.mask_prob, self.CLOZE_MASK_TOKEN, self.item_count, self.rng)
+        return dataset
+    
+    def _get_inference_loader(self):
+        dataset = self._get_inference_dataset()
+        dataloader = data_utils.DataLoader(dataset, batch_size=1, shuffle=False, pin_memory=True)
+        return dataloader
+    
+    def _get_inference_dataset(self):
+        dataset = BertInferenceDataset(self.infer, self.max_len)
         return dataset
 
     def _get_val_loader(self):
@@ -147,3 +157,21 @@ class BertEvalDataset(data_utils.Dataset):
 
         return torch.LongTensor(seq), torch.LongTensor(candidates), torch.LongTensor(labels)
 
+class BertInferenceDataset(data_utils.Dataset):
+    def __init__(self, u2seq, max_len):
+        self.u2seq = u2seq
+        self.users = sorted(self.u2seq.keys())
+        self.max_len = max_len
+
+    def __len__(self):
+        return len(self.users)
+
+    def __getitem__(self, index):
+        user = self.users[index]
+        seq = self.u2seq[user]
+
+        seq = seq[-self.max_len:]
+        padding_len = self.max_len - len(seq)
+        seq = [0] * padding_len + seq
+        
+        return torch.LongTensor(seq)

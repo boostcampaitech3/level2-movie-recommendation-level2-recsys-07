@@ -33,7 +33,7 @@ def set_template(args):
         args.enable_lr_schedule = True
         args.decay_step = 25
         args.gamma = 1.0
-        args.num_epochs = 100 if args.dataset_code == 'ml-1m' else 200
+        args.num_epochs = 100 if args.dataset_code == 'ml-1m' else 10
         args.metric_ks = [1, 5, 10, 20, 50, 100]
         args.best_metric = 'NDCG@10'
 
@@ -72,7 +72,7 @@ def set_template(args):
         args.lr = 1e-3
         args.enable_lr_schedule = False
         args.weight_decay = 0.00
-        args.num_epochs = 100 if args.dataset_code == 'ml-1m' else 200
+        args.num_epochs = 100 if args.dataset_code == 'ml-1m' else 1
         args.metric_ks = [1, 5, 10, 20, 50, 100]
         args.best_metric = 'NDCG@10'
 
