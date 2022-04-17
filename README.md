@@ -19,9 +19,9 @@
     [5-2. 모델 별 최고 성능](#5-2model-별-최고-성능)  ## TODO ##   
     [5-3. 모델 선정 및 분석](#5-3모델-선정-개요)  
 [**6. Ensemble**](#6ensemble앙상블)  
-    [6-1 Hard voting](#6-1-hard-voting)
-    [6-2 Weighted hard voting](#6-2-weighted-hard-voting)
-    [6-3. Ensemble 결과](#6-3-ensemble-결과)
+    [6-1 Hard voting](#6-1-hard-voting)  
+    [6-2 Weighted hard voting](#6-2-weighted-hard-voting)  
+    [6-3. Ensemble 결과](#6-3-ensemble-결과)  
 [**7. mlflow 실험 관리**](#7-mlflow-실험-관리)  
 [**8. 최종 순위 및 결과**](#8-최종-순위-및-결과)
 
