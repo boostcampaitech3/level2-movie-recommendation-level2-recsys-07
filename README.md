@@ -12,11 +12,11 @@
     [2-1.풀어야할 문제가 무엇인가?](#2-1-풀어야할-문제가-무엇인가)  
     [2-2.문제의 input,output은 무엇인가?](#2-2-문제의-input-output은-무엇인가)  
     [2-3.어떻게 사용이 되는가?](#2-3-어떻게-사용이-되는가)  
-[**3. EDA**](#3eda)  ## TODO ##  
+[**3. EDA**](#3eda)  
 [**4. Data Processing**](#4data-processing)  
 [**5. Model**](#5model)  
-    [5-1. 모델 개요](#5-1model-개요) ## TODO ##   
-    [5-2. 모델 별 최고 성능](#5-2model-별-최고-성능)  ## TODO ##   
+    [5-1. 모델 개요](#5-1model-개요)  
+    [5-2. 모델 별 최고 성능](#5-2model-별-최고-성능)  
     [5-3. 모델 선정 및 분석](#5-3모델-선정-개요)  
 [**6. Ensemble**](#6ensemble앙상블)  
     [6-1 Hard voting](#6-1-hard-voting)  
@@ -273,8 +273,6 @@ Models
 
 ### 5-2.모델 별 최고 성능
 
-**#### TODO ####**
-
 |Model|Augmentation/Skils|Recall10|
 |-----|------------------|-------|
 |DeepFM|Genre, Writer, Director Concat|0.079|
@@ -288,8 +286,6 @@ Models
 |RecVAE|epoch = 50, gamma = 0.004|0.1243|
 
 ### 5-3.모델 선정 개요
-
-**#### TODO ####**
 
 - DeepFM : 영화에 대한 Attribute를 활용하여 사용자가 선호하는 아이템 유형을 활용해 추천하고자 선정
 - FFM : DeepFM이 학습과 추론과정 소요되는 시간이 길어 가벼운 모델을 사용하고자 선정
