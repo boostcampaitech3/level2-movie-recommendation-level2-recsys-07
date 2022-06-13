@@ -227,6 +227,12 @@ Project
 4. 유저별 장르 개수와 평균, 분산
 5. 유저별 영화 시청횟수 분포
 6. 고전 명작과 현대 명작의 분포
+7. 사용자의 Timestamp로 서비스 이용 기간 분석
+ - 영화를 본 개월 수의 히스토그램
+https://user-images.githubusercontent.com/41178045/159420503-0bd7fa45-16a1-4413-8ff3-68f776cd3d32.png
+ - 한 달 이내로 서비스를 사용한 사용자들이 만든 로그의 길이
+https://user-images.githubusercontent.com/41178045/162798935-5d14dce5-0ab5-45dc-b91c-aa9e67abb8f6.png
+
 
 ## 4.Data Processing
 
