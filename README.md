@@ -15,8 +15,8 @@
 [**3. EDA**](#3eda)  ## TODO ##  
 [**4. Data Processing**](#4data-processing)  
 [**5. Model**](#5model)  
-    [5-1. 모델 개요](#5-1model-개요) ## TODO ##   
-    [5-2. 모델 별 최고 성능](#5-2model-별-최고-성능)  ## TODO ##   
+    [5-1. 모델 개요](#5-1model-개요) 
+    [5-2. 모델 별 최고 성능](#5-2model-별-최고-성능) 
     [5-3. 모델 선정 및 분석](#5-3모델-선정-개요)  
 [**6. Ensemble**](#6ensemble앙상블)  
     [6-1 Hard voting](#6-1-hard-voting)  
@@ -228,10 +228,10 @@ Project
 5. 유저별 영화 시청횟수 분포
 6. 고전 명작과 현대 명작의 분포
 7. 사용자의 Timestamp로 서비스 이용 기간 분석
- - 영화를 본 개월 수의 히스토그램
-https://user-images.githubusercontent.com/41178045/159420503-0bd7fa45-16a1-4413-8ff3-68f776cd3d32.png
- - 한 달 이내로 서비스를 사용한 사용자들이 만든 로그의 길이
-https://user-images.githubusercontent.com/41178045/162798935-5d14dce5-0ab5-45dc-b91c-aa9e67abb8f6.png
+ - 영화를 본 개월 수의 히스토그램  
+![image](https://user-images.githubusercontent.com/41178045/159420503-0bd7fa45-16a1-4413-8ff3-68f776cd3d32.png)
+ - 한 달 이내로 서비스를 사용한 사용자들이 만든 로그의 길이  
+![image](https://user-images.githubusercontent.com/41178045/162798935-5d14dce5-0ab5-45dc-b91c-aa9e67abb8f6.png)
 
 
 ## 4.Data Processing
@@ -278,9 +278,6 @@ Models
 ```
 
 ### 5-2.모델 별 최고 성능
-
-**#### TODO ####**
-
 |Model|Augmentation/Skils|Recall10|
 |-----|------------------|-------|
 |DeepFM|Genre, Writer, Director Concat|0.079|
@@ -294,9 +291,6 @@ Models
 |RecVAE|epoch = 50, gamma = 0.004|0.1243|
 
 ### 5-3.모델 선정 개요
-
-**#### TODO ####**
-
 - DeepFM : 영화에 대한 Attribute를 활용하여 사용자가 선호하는 아이템 유형을 활용해 추천하고자 선정
 - FFM : DeepFM이 학습과 추론과정 소요되는 시간이 길어 가벼운 모델을 사용하고자 선정
 - BERT4Rec : 유저의 시청기록을 masking 하는 clozure task가 현재 대회에서 해결하고자 하는 문제와 유사하다고 판단하여 선정하게 되었다.
