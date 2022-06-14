@@ -40,3 +40,15 @@
 - sequence 길이 최대 :  1571
 - sequence 길이 최소 :  28
 - 평균 기간 : 15.8개월
+
+### 영화의 장르 분포와 사용자 feature간 상관성 분석      
+<img src="https://user-images.githubusercontent.com/44887886/173512433-cdde9bf3-93b4-4d18-b9a9-646cbfabf1cf.png">      
+
+### 장르 상관성 분석          
+<img src="https://user-images.githubusercontent.com/44887886/173512677-7271a906-117c-4b00-a417-38d0572c3746.png">
+
+### 영화의 년도 별 개수와 전체 년도의 평균과 분산 추청           
+<img src="https://user-images.githubusercontent.com/44887886/173512755-82ec36fc-7bb9-46e4-9340-8aef82c465c1.png">
+
+### 유저별 장르 개수와 평균, 분산           
+<img src="https://user-images.githubusercontent.com/44887886/173513124-5ca9d594-baf4-4bc7-a37f-83946ff883b9.png">
