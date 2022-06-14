@@ -1,0 +1,18 @@
+#config.yml
+seed : 42                   # random seed
+epochs : 100                 # number of epochs to train
+batch_size: 512              # number of batch size
+dataset: "TrainDataset"    # dataset type
+model : "DeepFM"            # model type
+optimizer: "Adam"           # optimizer type
+scheduler: "StepLR"         # scheduler type
+lr_decay_step: 30           # lr decay step
+early_stopping: 10          # early stopping type
+lr: 1.0e-4                  # learning rate
+drop_ratio: 0.1             # ratio for drop out
+val_ratio: 0.2              # ratio for validaton
+criterion: "bce_loss"       # criterion type
+embedding_dim: 10           # embedding dimention
+name: "rating_gener_writer_director_df_100_simple"          # model save at ./exp/expriment
+negative_num : 100           # negative sample numbers
+tracking_server: "http://34.105.0.176:5000/"
