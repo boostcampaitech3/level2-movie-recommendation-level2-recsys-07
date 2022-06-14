@@ -59,7 +59,7 @@
     * [Data Processing](#2data-processing) 
     * [Model](#3model)   
     * [Ensemble](#4ensemble)  
-- [mlflow 실험 관리](#MLflow-실험-관리)  
+- [MLflow 실험 관리](#MLflow-실험-관리)  
 - [최종 순위 및 결과](#최종-순위-및-결과)
 
 <br>
