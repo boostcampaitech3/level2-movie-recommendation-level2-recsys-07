@@ -32,7 +32,7 @@
 전처리 된 MovieLens 데이터셋의 사용자 영화 시청 이력데이터를 바탕으로 사용자가 시청했던 영화 몇 개와 시청할 영화 몇 개를 추천한다. 단순히 sequential 예측이 아니라 중간 log가 비어있기 때문에 전반적인 유저에 대한 예측을 수행해야 한다.
 추가적으로 영화에 대한 side information으로 장르, 개봉년도, 작가, 감독의 정보가 주어진다. 주어진 데이터들을 활용하여 사용자에게 10개의 영화를 추천하고 **Recall@10** 값을 평가한다.
 
-<p="center">
+<p align="center">
 <img src='https://user-images.githubusercontent.com/10546369/163722511-cf4508bd-8a78-47d1-a49c-a4293ed60400.png' width='500'></p>
 
 ## 1-2.프로젝트 기간
