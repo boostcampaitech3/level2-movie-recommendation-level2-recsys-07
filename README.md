@@ -279,7 +279,7 @@ Project
 
 ### 3.Model
 
-- [📜 Model README](./Model/README.md)
+- [📜 Model README](./Models/README.md)
 
 ### 4.Ensemble
 
