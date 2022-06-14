@@ -15,9 +15,9 @@
 [**3. EDA**](#3eda)  ## TODO ##  
 [**4. Data Processing**](#4data-processing)  
 [**5. Model**](#5model)  
-    [5-1. 모델 개요](#5-1model-개요) 
-    [5-2. 모델 별 최고 성능](#5-2model-별-최고-성능) 
-    [5-3. 모델 선정 및 분석](#5-3모델-선정-개요)  
+    [5-1. 모델 개요](#5-1model-개요)  
+    [5-2. 모델 별 최고 성능](#5-2model-별-최고-성능)  
+    [5-3. 모델 선정 및 분석](#5-3모델-선정-개요)   
 [**6. Ensemble**](#6ensemble앙상블)  
     [6-1 Hard voting](#6-1-hard-voting)  
     [6-2 Weighted hard voting](#6-2-weighted-hard-voting)  
