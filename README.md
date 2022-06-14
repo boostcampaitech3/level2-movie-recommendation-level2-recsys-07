@@ -51,16 +51,16 @@
 
 ## 목차
 
-- [대회 개요](##대회-개요) 
-- [프로젝트 구조](##프로젝트-구조) 
-- [문제 정의](##문제-정의)  
-- [상세 설명](##상세-설명)    
-    - [EDA](###1.EDA)  
-    - [Data Processing](###2.Data-Processing) 
-    - [Model](###3.Model)   
-    - [Ensemble](###4.Ensemble)  
-- [mlflow 실험 관리](##MLflow-실험-관리)  
-- [최종 순위 및 결과](##최종-순위-및-결과)
+- [대회 개요](#대회-개요) 
+- [프로젝트 구조](#프로젝트-구조) 
+- [문제 정의](#문제-정의)  
+- [상세 설명](#상세-설명)    
+    * [EDA](#1-EDA)  
+    * [Data Processing](#2-Data-Processing) 
+    * [Model](#3-Model)   
+    * [Ensemble](#4-Ensemble)  
+- [mlflow 실험 관리](#MLflow-실험-관리)  
+- [최종 순위 및 결과](#최종-순위-및-결과)
 
 <br>
 
