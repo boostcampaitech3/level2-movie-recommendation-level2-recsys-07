@@ -12,7 +12,7 @@
     [2-1.풀어야할 문제가 무엇인가?](#2-1-풀어야할-문제가-무엇인가)  
     [2-2.문제의 input,output은 무엇인가?](#2-2-문제의-input-output은-무엇인가)  
     [2-3.어떻게 사용이 되는가?](#2-3-어떻게-사용이-되는가)  
-[**3. EDA**](#3eda)  ## TODO ##  
+[**3. EDA**](#3eda) 
 [**4. Data Processing**](#4data-processing)  
 [**5. Model**](#5model)  
     [5-1. 모델 개요](#5-1model-개요)  
@@ -222,26 +222,8 @@ Project
 
 
 ## 3.EDA
-1. 영화의 장르 분포와 사용자 feature간 상관성 분석      
-    <img src="https://user-images.githubusercontent.com/44887886/173512433-cdde9bf3-93b4-4d18-b9a9-646cbfabf1cf.png">      
 
-2. 장르 상관성 분석          
-    <img src="https://user-images.githubusercontent.com/44887886/173512677-7271a906-117c-4b00-a417-38d0572c3746.png">
-
-3. 영화의 년도 별 개수와 전체 년도의 평균과 분산 추청           
-    <img src="https://user-images.githubusercontent.com/44887886/173512755-82ec36fc-7bb9-46e4-9340-8aef82c465c1.png">
-
-4. 유저별 장르 개수와 평균, 분산           
-    <img src="https://user-images.githubusercontent.com/44887886/173513124-5ca9d594-baf4-4bc7-a37f-83946ff883b9.png">
-
-5. 유저별 영화 시청횟수 분포
-6. 고전 명작과 현대 명작의 분포
-7. 사용자의 Timestamp로 서비스 이용 기간 분석
- - 영화를 본 개월 수의 히스토그램       
-    <img src='https://user-images.githubusercontent.com/41178045/159420503-0bd7fa45-16a1-4413-8ff3-68f776cd3d32.png' width='500'> 
-              
- - 한 달 이내로 서비스를 사용한 사용자들이 만든 로그의 길이  
-    <img src='https://user-images.githubusercontent.com/41178045/162798935-5d14dce5-0ab5-45dc-b91c-aa9e67abb8f6.png'>
+- [📜 EDA README](./EDA/README.md)
 
 
 ## 4.Data Processing
