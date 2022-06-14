@@ -88,149 +88,202 @@
 
 ```
 Project
-├── EDA
-│   ├── EDA.ipynb
-│   ├── README.md
-│   └── [EDA] Movie Recommendation.ipynb
-├── MODELS
-│   ├── BERT4Rec
-│   │   ├── UIIM_for_MVAE.ipynb
-│   │   ├── config.yaml
-│   │   ├── dataset.py
-│   │   ├── inference.ipynb
-│   │   ├── inference.py
-│   │   ├── loss.py
-│   │   ├── model.py
-│   │   ├── preprocess.py
-│   │   ├── train.py
-│   │   └── utils.py
-│   ├── BERT4Rec-VAE-Pytorch
-│   │   ├── Data
-│   │   │   └── ml-20m
-│   │   │       └── README.txt
-│   │   ├── Images
-│   │   │   ├── ML1m-results.png
-│   │   │   ├── ML20m-results.png
-│   │   │   └── vae_tensorboard.png
-│   │   ├── LICENSE
-│   │   ├── README.md
-│   │   ├── config.py
-│   │   ├── dataloaders
-│   │   │   ├── __init__.py
-│   │   │   ├── ae.py
-│   │   │   ├── base.py
-│   │   │   ├── bert.py
-│   │   │   └── negative_samplers
-│   │   │       ├── __init__.py
-│   │   │       ├── base.py
-│   │   │       ├── popular.py
-│   │   │       └── random.py
-│   │   ├── datasets
-│   │   │   ├── __init__.py
-│   │   │   ├── base.py
-│   │   │   ├── ml_1m.py
-│   │   │   ├── ml_20m.py
-│   │   │   └── utils.py
-│   │   ├── experiments
-│   │   │   └── test_2022-04-08_0
-│   │   │       └── config.json
-│   │   ├── loggers.py
-│   │   ├── main.py
-│   │   ├── models
-│   │   │   ├── __init__.py
-│   │   │   ├── base.py
-│   │   │   ├── bert.py
-│   │   │   ├── bert_modules
-│   │   │   │   ├── __init__.py
-│   │   │   │   ├── attention
-│   │   │   │   │   ├── __init__.py
-│   │   │   │   │   ├── multi_head.py
-│   │   │   │   │   └── single.py
-│   │   │   │   ├── bert.py
-│   │   │   │   ├── embedding
-│   │   │   │   │   ├── __init__.py
-│   │   │   │   │   ├── bert.py
-│   │   │   │   │   ├── position.py
-│   │   │   │   │   ├── segment.py
-│   │   │   │   │   └── token.py
-│   │   │   │   ├── transformer.py
-│   │   │   │   └── utils
-│   │   │   │       ├── __init__.py
-│   │   │   │       ├── feed_forward.py
-│   │   │   │       ├── gelu.py
-│   │   │   │       ├── layer_norm.py
-│   │   │   │       └── sublayer.py
-│   │   │   ├── dae.py
-│   │   │   └── vae.py
-│   │   ├── options.py
-│   │   ├── requirements.txt
-│   │   ├── run.ipynb
-│   │   ├── templates.py
-│   │   ├── trainers
-│   │   │   ├── __init__.py
-│   │   │   ├── base.py
-│   │   │   ├── bert.py
-│   │   │   ├── dae.py
-│   │   │   ├── utils.py
-│   │   │   └── vae.py
-│   │   └── utils.py
-│   ├── CF
-│   │   ├── AutoRec
-│   │   │   ├── datasets.py
-│   │   │   ├── inference.py
-│   │   │   ├── loss.py
-│   │   │   ├── models.py
-│   │   │   ├── run.ipynb
-│   │   │   └── train.py
-│   │   ├── FISM
-│   │   │   ├── FISM.py
-│   │   │   ├── README.md
-│   │   │   ├── UIIMatrix_Maker.py
-│   │   │   └── submission.csv
-│   │   ├── Mult-VAE
-│   │   │   ├── DAE_inference.py
-│   │   │   ├── DAE_train.py
-│   │   │   ├── MVAE_inference.ipynb
-│   │   │   ├── README.md
-│   │   │   ├── UIIM_for_MVAE.ipynb
-│   │   │   ├── dataloader.py
-│   │   │   ├── dataset.py
-│   │   │   ├── loss.py
-│   │   │   ├── model.pt
-│   │   │   ├── model.py
-│   │   │   └── train.py
-│   │   └── User,Item-based
-│   │       ├── README.MD
-│   │       └── User,Item-based CF.ipynb
-│   ├── DeepFM
-│   │   ├── README.md
-│   │   ├── config.yml
-│   │   ├── datasets.py
-│   │   ├── inference.ipynb
-│   │   ├── inference.py
-│   │   ├── loss.py
-│   │   ├── models.py
-│   │   ├── preprocessing.py
-│   │   ├── test.ipynb
-│   │   ├── test.py
-│   │   ├── train.py
-│   │   └── utils.py
-│   ├── Ensemble
-│   │   ├── FISM&150_submission.csv
-│   │   ├── FISM&250_submission.csv
-│   │   ├── FISM&RELU_submission.csv
-│   │   ├── sub_concate.ipynb
-│   │   └── submission_files
-│   │       ├── FISM_submission.csv
-│   │       ├── RELU_submission.csv
-│   │       ├── SEQ250_submission.csv
-│   │       └── SEQ_150_submission.csv
-│   └── RuleBase
-│       └── movierec_by_year.ipynb
-├── README.md
-└── feature
-    ├── split_train_ratings.ipynb
-    └── trainers.py
+|-- EDA
+|   |-- EDA.ipynb
+|   |-- README.md
+|   |-- Users.ipynb
+|   `-- [EDA]\ Movie\ Recommendation.ipynb
+|-- Ensemble
+|   |-- README.md
+|   |-- hard_voting.ipynb
+|   `-- soft_voting.ipynb
+|-- Models
+|   |-- BERT4Rec
+|   |   |-- UIIM_for_MVAE.ipynb
+|   |   |-- config.yaml
+|   |   |-- data
+|   |   |   `-- input_data.pickle
+|   |   |-- dataset.py
+|   |   |-- inference.ipynb
+|   |   |-- inference.py
+|   |   |-- loss.py
+|   |   |-- model.py
+|   |   |-- movierec_by_year.py
+|   |   |-- movierec_neg_sample.py
+|   |   |-- preprocess.py
+|   |   |-- train.py
+|   |   `-- utils.py
+|   |-- BERT4Rec-VAE-Pytorch
+|   |   |-- Data
+|   |   |   `-- ml-20m
+|   |   |       `-- README.txt
+|   |   |-- LICENSE
+|   |   |-- config.py
+|   |   |-- dataloaders
+|   |   |   |-- __init__.py
+|   |   |   |-- ae.py
+|   |   |   |-- base.py
+|   |   |   |-- bert.py
+|   |   |   `-- negative_samplers
+|   |   |       |-- __init__.py
+|   |   |       |-- base.py
+|   |   |       |-- popular.py
+|   |   |       `-- random.py
+|   |   |-- datasets
+|   |   |   |-- __init__.py
+|   |   |   |-- base.py
+|   |   |   |-- ml_1m.py
+|   |   |   |-- ml_20m.py
+|   |   |   `-- utils.py
+|   |   |-- inference.py
+|   |   |-- loggers.py
+|   |   |-- main.py
+|   |   |-- models
+|   |   |   |-- __init__.py
+|   |   |   |-- base.py
+|   |   |   |-- bert.py
+|   |   |   |-- bert_modules
+|   |   |   |   |-- __init__.py
+|   |   |   |   |-- attention
+|   |   |   |   |   |-- __init__.py
+|   |   |   |   |   |-- multi_head.py
+|   |   |   |   |   `-- single.py
+|   |   |   |   |-- bert.py
+|   |   |   |   |-- embedding
+|   |   |   |   |   |-- __init__.py
+|   |   |   |   |   |-- bert.py
+|   |   |   |   |   |-- position.py
+|   |   |   |   |   |-- segment.py
+|   |   |   |   |   `-- token.py
+|   |   |   |   |-- transformer.py
+|   |   |   |   `-- utils
+|   |   |   |       |-- __init__.py
+|   |   |   |       |-- feed_forward.py
+|   |   |   |       |-- gelu.py
+|   |   |   |       |-- layer_norm.py
+|   |   |   |       `-- sublayer.py
+|   |   |   |-- dae.py
+|   |   |   `-- vae.py
+|   |   |-- options.py
+|   |   |-- requirements.txt
+|   |   |-- templates.py
+|   |   |-- trainers
+|   |   |   |-- __init__.py
+|   |   |   |-- base.py
+|   |   |   |-- bert.py
+|   |   |   |-- dae.py
+|   |   |   |-- utils.py
+|   |   |   `-- vae.py
+|   |   `-- utils.py
+|   |-- BPR
+|   |   |-- README.md
+|   |   |-- config.py
+|   |   |-- data
+|   |   |   `-- user_item_reindexing.ipynb
+|   |   |-- data_utils.py
+|   |   |-- evaluate.py
+|   |   |-- inference.ipynb
+|   |   |-- main.py
+|   |   |-- model.py
+|   |   `-- user_item_reindexing.ipynb
+|   |-- CF
+|   |   |-- AutoRec
+|   |   |   |-- datasets.py
+|   |   |   |-- inference.py
+|   |   |   |-- loss.py
+|   |   |   |-- models.py
+|   |   |   |-- run.ipynb
+|   |   |   `-- train.py
+|   |   |-- FISM
+|   |   |   |-- FISM.py
+|   |   |   |-- README.md
+|   |   |   |-- UIIMatrix_Maker.py
+|   |   |   `-- submission.csv
+|   |   |-- Mult-VAE
+|   |   |   |-- DAE_inference.py
+|   |   |   |-- DAE_train.py
+|   |   |   |-- MVAE_inference.ipynb
+|   |   |   |-- README.md
+|   |   |   |-- UIIM_for_MVAE.ipynb
+|   |   |   |-- config.yaml
+|   |   |   |-- dataloader.py
+|   |   |   |-- dataset.py
+|   |   |   |-- inference.py
+|   |   |   |-- loss.py
+|   |   |   |-- model.pt
+|   |   |   |-- model.py
+|   |   |   |-- train.py
+|   |   |   `-- utils.py
+|   |   `-- User,Item-based
+|   |       |-- README.MD
+|   |       |-- SVD.py
+|   |       |-- UBCF_bad_users.ipynb
+|   |       |-- UBCF_good_users.ipynb
+|   |       |-- User,Item-based\ CF.ipynb
+|   |       `-- User,Item-based_future.ipynb
+|   |-- DeepFM
+|   |   |-- README.md
+|   |   |-- config.yml
+|   |   |-- datasets.py
+|   |   |-- inference.ipynb
+|   |   |-- inference.py
+|   |   |-- loss.py
+|   |   |-- models.py
+|   |   |-- preprocessing.py
+|   |   |-- test.ipynb
+|   |   |-- test.py
+|   |   |-- train.py
+|   |   `-- utils.py
+|   |-- Ensemble
+|   |   |-- FISM&150_submission.csv
+|   |   |-- FISM&250_submission.csv
+|   |   |-- FISM&RELU_submission.csv
+|   |   |-- sub_concate.ipynb
+|   |   `-- submission_files
+|   |       |-- FISM_submission.csv
+|   |       |-- RELU_submission.csv
+|   |       |-- SEQ250_submission.csv
+|   |       `-- SEQ_150_submission.csv
+|   |-- FFM
+|   |   |-- FFM.ipynb
+|   |   |-- FFM_FULL.ipynb
+|   |   |-- FFM_TEST.ipynb
+|   |   |-- ffm_inference.py
+|   |   |-- inference.ipynb
+|   |   |-- model.py
+|   |   |-- output
+|   |   |   `-- result.md
+|   |   `-- train.py
+|   |-- README.md
+|   |-- RuleBase
+|   |   |-- bad_user_writer.ipynb
+|   |   |-- clustering_genre.ipynb
+|   |   |-- ensemble_good_bad.ipynb
+|   |   `-- movierec_by_year.ipynb
+|   `-- S3Rec
+|       |-- README.md
+|       |-- data
+|       |-- datasets.py
+|       |-- good_user_02.ipynb
+|       |-- good_user_02.py
+|       |-- inference.py
+|       |-- models.py
+|       |-- modules.py
+|       |-- preprocessing.py
+|       |-- run_pretrain.py
+|       |-- run_train.py
+|       |-- sample_submission.ipynb
+|       |-- train.ipynb
+|       |-- trainers.py
+|       |-- trainers_euclidean_dist.py
+|       `-- utils.py
+|-- Preprocessing
+|   |-- README.md
+|   |-- bad_user.ipynb
+|   |-- future.ipynb
+|   |-- split_train_ratings.ipynb
+|   `-- unpopular.ipynb
+`-- README.md
 ```
 </div>
 </details>
@@ -241,29 +294,20 @@ Project
 ### 1. 풀어야할 문제가 무엇인가?
 - 유저가 볼만한 영화 추천
 - 유저가 봤을 법한 영화 추천
-- 어느 위치에 있는 영화를 예측해야 하는지 알 수 없다.
-- 과거에 봤던 것일지도 모르고 미래에 볼 것인지도 모르고
-- 성향이 시간에 따라 변하는 사람
-    - 한 달 이내 - 그 이상 그룹으로 나눠서 다른 모델 적용
-    그 사람이 들어온 해에서 유명했던 아이템 ( 그 전 1년동안)
-    - 영화 200개 이내로 본 그룹 & 200이상 본 그룹 다른 모델
-- 2010년에 이미 사용을 끝낸 유저에게는 2014년 영화 배제해야함
-- Temporal Split적용
 
 ### 2. 문제의 input, output은 무엇인가?
-
-![image](https://user-images.githubusercontent.com/10546369/163722950-ed0a51a1-88a2-4c6e-9c03-1717a9e799fc.png)
+<p align="center">
+<img src="https://user-images.githubusercontent.com/10546369/163722950-ed0a51a1-88a2-4c6e-9c03-1717a9e799fc.png" width="400"></p>
 
 - **Input**
     - train_ratings.csv
     - 영화 feature data - directors, writers, years, titles, genres
-        - titles 을 어떻게 사용할지 정해야함
 - **Output**
     - 각 유저마다 10개의 추천 영화
 
 ### 3. 어떻게 사용이 되는가?
 
-- **로그가 누락된 상황에서도 사용자에게 적절한 영화가 추천되도록 만들어야한다**
+- **로그가 누락된 상황에서도 사용자에게 적절한 영화가 추천되도록 한다**
 
 <br>
 
@@ -311,13 +355,18 @@ mlflow.set_experiment(<EXPRIMENT_NAME>) # 실험 이름(ex : DeepFM)
 실험에 사용한 hyperparameter를 기록할 수 있다.  
 - mlflow.log_param(string, string) 
 
-- 참고
+<details>
+<summary>참고</summary>
+<div markdown="2">
+
 ```code
 mlflow.log_param("seed", args.seed)
 mlflow.log_param("epochs", args.epochs)
 mlflow.log_param("batch_size", args.batch_size)
 ...
 ```
+</div>
+</details>
 
 3. mlflow 실험 시작 및 matric 기록
 
@@ -325,7 +374,10 @@ mlflow.log_param("batch_size", args.batch_size)
 - with block 안에 train block과 valid block을 넣는다
 - mlflow.log_metrics(dict, int) 으로 step마다 matric 기록 가능
 
-- 참고
+<details>
+<summary>참고</summary>
+<div markdown="3"> 
+
 ```code
 with mlflow.start_run() as run:
     #train block
@@ -341,10 +393,17 @@ with mlflow.start_run() as run:
         step    # 현재 step(epoch or train step)
     )
 ```
+</div>
+</details>
+
 
 4. Artifacts 저장  
 모델, log 파일, 이미지 등은 `mlflow.log_artifact` 함수로 저장할 수 있다.
 - `with mlflow.start_run()` 블럭 내부에서 validation이 끝난 후 artifact를 저장한다.
+<details>
+<summary>참고</summary>
+<div markdown="3"> 
+
 ```code
 with mlflow.start_run() as run:
      #Artifact 파일 저장
@@ -353,6 +412,9 @@ with mlflow.start_run() as run:
      #Artifact 폴더 저장
      mlflow.log_artifacts(<Artifact folder path>) #저장할 폴더를 지정하여 폴더 내 모든 파일을 저장할 수 있음
 ```   
+</div>
+</details>
+
 
 <br>
 
