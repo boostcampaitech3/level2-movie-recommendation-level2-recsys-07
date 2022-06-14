@@ -300,14 +300,14 @@ Project
 <img src="https://user-images.githubusercontent.com/10546369/163722950-ed0a51a1-88a2-4c6e-9c03-1717a9e799fc.png" width="400"></p>
 
 - **Input**
-    - train_ratings.csv
     - 영화 feature data - directors, writers, years, titles, genres
+    - 사용하는 모델마다 다름
 - **Output**
     - 각 유저마다 10개의 추천 영화
 
 ### 3. 어떻게 사용이 되는가?
 
-- **로그가 누락된 상황에서도 사용자에게 적절한 영화가 추천되도록 한다**
+- 로그가 누락된 상황에서도 사용자에게 적절한 영화가 추천되도록 한다
 
 <br>
 
@@ -336,84 +336,88 @@ Project
 ### MLflow Tracking Server 정보
 
 다음 명령어를 Virtual Machine에서 입력하여 Tracking Server 실행
-> mlflow server \--backend-store-uri sqlite:///mlflow.db \--artifacts-destination gs://movierec_bucket/artifacts --serve-artifacts \--host 0.0.0.0 --port 5000  
+```code
+mlflow server \--backend-store-uri sqlite:///mlflow.db \--artifacts-destination gs://movierec_bucket/artifacts --serve-artifacts \--host 0.0.0.0 --port 5000  
+```
 
 서버 접속 정보 : http://34.105.0.176:5000/
 
 ### 서버에 Tracking 하는 방법
 - 실험을 진행하는 클라이언트에 mlflow 설치
-> pip install mlflow
+```code
+pip install mlflow
+```
 
 1. Tracking 서버 uri 및 실험 명칭 세팅  
-서버 정보와 실험 명칭을 세팅한다.
+- 서버 정보와 실험 명칭을 세팅한다.
 ```code
 mlflow.set_tracking_uri(<SERVER_URI>) # http://34.105.0.176:5000/
 mlflow.set_experiment(<EXPRIMENT_NAME>) # 실험 이름(ex : DeepFM)
 ```
   
 2. 기록할 Parameter 설정  
-실험에 사용한 hyperparameter를 기록할 수 있다.  
+- 실험에 사용한 hyperparameter를 기록할 수 있다.  
 - mlflow.log_param(string, string) 
 
-<details>
-<summary>참고</summary>
-<div markdown="2">
+    <details>
+    <summary>참고</summary>
+    <div markdown="2">
 
-```code
-mlflow.log_param("seed", args.seed)
-mlflow.log_param("epochs", args.epochs)
-mlflow.log_param("batch_size", args.batch_size)
-...
-```
-</div>
-</details>
+    ```code
+    mlflow.log_param("seed", args.seed)
+    mlflow.log_param("epochs", args.epochs)
+    mlflow.log_param("batch_size", args.batch_size)
+    ...
+    ```
+    </div>
+    </details>
 
 3. mlflow 실험 시작 및 matric 기록
 
-`with mlflow.start_run()` 으로 실험을 시작할 수 있다.
+- `with mlflow.start_run()` 으로 실험을 시작할 수 있다.
 - with block 안에 train block과 valid block을 넣는다
 - mlflow.log_metrics(dict, int) 으로 step마다 matric 기록 가능
 
-<details>
-<summary>참고</summary>
-<div markdown="3"> 
+    <details>
+    <summary>참고</summary>
+    <div markdown="3"> 
 
-```code
-with mlflow.start_run() as run:
-    #train block
-    #train 관련 코드 입력
-    mlflow.log_metrics(
-        <dict>, # 기록하고 싶은 matric((ex : loss, accuracy))
-        step    # 현재 step(epoch or train step)
-    )
-    #valid block
-    #validation 관련 코드
-    mlflow.log_metrics(
-        <dict>, # 기록하고 싶은 matric((ex : loss, accuracy))
-        step    # 현재 step(epoch or train step)
-    )
-```
-</div>
-</details>
+    ```code
+    with mlflow.start_run() as run:
+        #train block
+        #train 관련 코드 입력
+        mlflow.log_metrics(
+            <dict>, # 기록하고 싶은 matric((ex : loss, accuracy))
+            step    # 현재 step(epoch or train step)
+        )
+        #valid block
+        #validation 관련 코드
+        mlflow.log_metrics(
+            <dict>, # 기록하고 싶은 matric((ex : loss, accuracy))
+            step    # 현재 step(epoch or train step)
+        )
+    ```
+    </div>
+    </details>
 
 
 4. Artifacts 저장  
-모델, log 파일, 이미지 등은 `mlflow.log_artifact` 함수로 저장할 수 있다.
+- 모델, log 파일, 이미지 등은 `mlflow.log_artifact` 함수로 저장할 수 있다.
 - `with mlflow.start_run()` 블럭 내부에서 validation이 끝난 후 artifact를 저장한다.
-<details>
-<summary>참고</summary>
-<div markdown="3"> 
+    <details>
+    <summary>참고</summary>
+    <div markdown="3"> 
 
-```code
-with mlflow.start_run() as run:
-     #Artifact 파일 저장
-     mlflow.log_artifact(<Artifact path>) #저장할 Artifact의 경로 지정
-        
-     #Artifact 폴더 저장
-     mlflow.log_artifacts(<Artifact folder path>) #저장할 폴더를 지정하여 폴더 내 모든 파일을 저장할 수 있음
-```   
-</div>
-</details>
+    ```code
+    with mlflow.start_run() as run:
+        #Artifact 파일 저장
+        mlflow.log_artifact(<Artifact path>) #저장할 Artifact의 경로 지정
+            
+        #Artifact 폴더 저장
+        mlflow.log_artifacts(<Artifact folder path>) #저장할 폴더를 지정하여 폴더 내 모든 파일을 저장할 수 있음
+    ```   
+    </div>
+    </details>
 
 
 <br>
